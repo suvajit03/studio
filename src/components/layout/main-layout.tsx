@@ -1,18 +1,8 @@
 'use client';
 import { useState } from 'react';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarTrigger,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, Menu, X, Bell, Calendar, Sun } from 'lucide-react';
-import UpcomingMeetings from '@/components/dashboard/upcoming-meetings';
+import { Bot, Bell, Calendar, Sun } from 'lucide-react';
 import AuthButton from '@/components/auth/auth-button';
 import Chatbot from '@/components/chatbot/chatbot';
 import {
@@ -38,45 +28,10 @@ export function MainLayout() {
       .toUpperCase();
 
   return (
-    <SidebarProvider>
       <div className="h-screen w-full bg-background flex flex-col">
         <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-16 items-center justify-between">
-              <div className="flex items-center gap-4">
-                <h1 className="text-2xl font-bold md:block font-headline text-primary">
-                  MeetAI
-                </h1>
-              </div>
-              
-              <div className="flex-1 flex justify-center">
-                <div className="flex items-center gap-4">
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="ghost">
-                                <Calendar className="mr-2 h-4 w-4" />
-                                My Calendar
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto">
-                            <MyCalendar/>
-                        </PopoverContent>
-                    </Popover>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="ghost">
-                                <Sun className="mr-2 h-4 w-4" />
-                                Weather
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto">
-                           <WeatherReport/>
-                        </PopoverContent>
-                    </Popover>
-                </div>
-              </div>
-
-
-              <div className="flex items-center gap-4">
+            <div className="container flex h-16 items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
                  <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -143,17 +98,49 @@ export function MainLayout() {
                     </Tabs>
                   </PopoverContent>
                 </Popover>
+                <h1 className="text-xl md:text-2xl font-bold font-headline text-primary hidden sm:block">
+                  MeetAI
+                </h1>
+              </div>
+              
+              <div className="flex-1 flex justify-center">
+                <div className="flex items-center gap-1 sm:gap-4">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="md:w-auto md:px-4">
+                                <Calendar className="h-4 w-4 md:mr-2" />
+                                <span className="hidden md:inline">My Calendar</span>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto">
+                            <MyCalendar/>
+                        </PopoverContent>
+                    </Popover>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="md:w-auto md:px-4">
+                                <Sun className="h-4 w-4 md:mr-2" />
+                                <span className="hidden md:inline">Weather</span>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto">
+                           <WeatherReport/>
+                        </PopoverContent>
+                    </Popover>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <AuthButton />
               </div>
             </div>
         </header>
 
         <div className="flex-grow flex overflow-hidden">
-            <main className="flex-1 flex p-4">
+            <main className="flex-1 flex p-0 md:p-4">
                 <Chatbot />
             </main>
         </div>
       </div>
-    </SidebarProvider>
   );
 }
