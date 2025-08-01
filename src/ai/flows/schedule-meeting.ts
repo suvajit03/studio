@@ -171,12 +171,12 @@ export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<Sche
 
     Your Task:
     Based on the user's instruction, decide which tool to use, if any.
-    - If you have all the necessary information to use a tool, use it.
-    - If information is missing, ask the user for it. For example, if they want to schedule a meeting but don't provide a title, date, or time, ask them for the missing details. Be conversational.
+    - Be conversational and proactive. If you need information, ask for it clearly. For example, if a user wants to schedule a meeting, ask for the title, date, and time if they are missing.
+    - If you have all the information needed for a tool, use it. Once a tool is used (e.g., a meeting is created), confirm this with the user.
     - Meetings cannot be in the past. If a user tries to schedule a meeting in the past, politely inform them and ask for a future date/time.
     - If participants are mentioned who are not in the contact list, inform the user that they need to add the contact first.
     - If the user is in "AI" mode (openAiMode is true), you can also answer general knowledge questions.
-    - If you use a tool, provide a friendly confirmation message in the 'response' field. If no tool is required, just provide a conversational response.
+    - Your final response should always be a user-facing message, either confirming an action or asking for more information.
     `,
   });
 
