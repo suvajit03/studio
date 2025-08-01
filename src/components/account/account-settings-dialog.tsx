@@ -25,20 +25,18 @@ export default function AccountSettingsDialog({ open, onOpenChange }: AccountSet
             Manage your profile, work schedule, and contacts.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-hidden">
-            <Tabs defaultValue="profile" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="profile">Profile & Work</TabsTrigger>
-                <TabsTrigger value="contacts">Contacts</TabsTrigger>
-            </TabsList>
-            <TabsContent value="profile" className="flex-grow overflow-y-auto mt-4 pr-2">
-                <ProfileSettings />
-            </TabsContent>
-            <TabsContent value="contacts" className="flex-grow overflow-y-auto mt-4 pr-2">
-                <ContactSettings />
-            </TabsContent>
-            </Tabs>
-        </div>
+        <Tabs defaultValue="profile" className="flex-grow flex flex-col overflow-hidden">
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="profile">Profile & Work</TabsTrigger>
+            <TabsTrigger value="contacts">Contacts</TabsTrigger>
+        </TabsList>
+        <TabsContent value="profile" className="flex-grow overflow-y-auto mt-4 -mr-6 pr-6">
+            <ProfileSettings />
+        </TabsContent>
+        <TabsContent value="contacts" className="flex-grow overflow-y-auto mt-4 -mr-6 pr-6">
+            <ContactSettings />
+        </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
