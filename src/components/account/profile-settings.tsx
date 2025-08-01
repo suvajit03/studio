@@ -1,3 +1,4 @@
+
 'use client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -124,7 +125,10 @@ export default function ProfileSettings() {
             const { latitude, longitude } = position.coords;
             try {
                 const response = await fetch(`https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}`);
-                if (!response.ok) throw new Error("Failed to fetch location name.");
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch location name');
+                }
                 const data = await response.json();
                 if (data.length > 0) {
                     const locationName = `${data[0].name}, ${data[0].country}`;
@@ -202,7 +206,7 @@ export default function ProfileSettings() {
                                 )}
                             >
                                 {field.value
-                                ? field.value
+                                ? locations.find(l => l.value === field.value)?.label ?? field.value
                                 : "Select location"}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -335,9 +339,9 @@ export default function ProfileSettings() {
                 />
             </div>
             <DialogFooter>
-                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
                 <Button onClick={handleGenerateAvatar} disabled={isGeneratingAvatar}>
-                    {isGeneratingAvatar ? 'Generating...' : 'Generate'}
+                    {isGeneratingAvatar ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Generate'}
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -345,3 +349,5 @@ export default function ProfileSettings() {
     </>
   );
 }
+
+    
