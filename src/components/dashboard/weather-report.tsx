@@ -67,7 +67,7 @@ export default function WeatherReport() {
             const currentData = data.current;
             const forecastData = data.forecast.forecastday[0];
 
-            const hourlyForecasts: ForecastInfo[] = forecastData.hour.slice(new Date().getHours()).slice(0, 8).map((item: any) => ({
+            const hourlyForecasts: ForecastInfo[] = forecastData.hour.slice(new Date().getHours()).map((item: any) => ({
                 time: format(new Date(item.time_epoch * 1000), 'ha'),
                 temp: `${Math.round(item.temp_c)}°`,
                 condition: item.condition.text,
@@ -152,7 +152,7 @@ export default function WeatherReport() {
                     <Carousel opts={{ align: "start" }} className="w-full">
                         <CarouselContent>
                             {weather.forecast.map((hour, index) => (
-                            <CarouselItem key={index} className="basis-1/4 sm:basis-1/5 md:basis-1/6">
+                            <CarouselItem key={index} className="basis-1/3 sm:basis-1/4 md:basis-1/5">
                                 <div className="flex flex-col items-center justify-center gap-2 p-2 rounded-lg bg-muted/50 h-full">
                                     <p className="text-xs text-muted-foreground">{hour.time}</p>
 
