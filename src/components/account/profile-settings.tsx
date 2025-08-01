@@ -55,7 +55,11 @@ const locations = [
     { value: "chicago, usa", label: "Chicago, USA" },
 ]
 
-export default function ProfileSettings() {
+interface ProfileSettingsProps {
+    onSaveChanges: () => void;
+}
+
+export default function ProfileSettings({ onSaveChanges }: ProfileSettingsProps) {
   const { user, updateUser } = useUser();
   const { toast } = useToast();
   const [isAvatarDialogOpen, setAvatarDialogOpen] = useState(false);
@@ -92,6 +96,7 @@ export default function ProfileSettings() {
       title: 'Profile updated',
       description: 'Your changes have been saved successfully.',
     });
+    onSaveChanges();
   }
 
   const handleGenerateAvatar = async () => {

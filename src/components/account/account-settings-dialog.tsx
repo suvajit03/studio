@@ -31,7 +31,7 @@ export default function AccountSettingsDialog({ open, onOpenChange }: AccountSet
             <TabsTrigger value="contacts">Contacts</TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="flex-grow overflow-y-auto mt-4 -mr-6 pr-6">
-            <ProfileSettings />
+            <ProfileSettings onSaveChanges={() => onOpenChange(false)} />
         </TabsContent>
         <TabsContent value="contacts" className="flex-grow overflow-y-auto mt-4 -mr-6 pr-6">
             <ContactSettings />
