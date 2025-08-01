@@ -95,7 +95,7 @@ export default function WeatherReport() {
                 </div>
             </div>
         )}
-        {!loading && !weather && <p className="text-sm text-muted-foreground text-center">Could not load weather data.</p>}
+        {!loading && !weather && <p className="text-sm text-muted-foreground text-center">Could not load weather data. Please check your API key and location.</p>}
       </CardContent>
     </Card>
   );
