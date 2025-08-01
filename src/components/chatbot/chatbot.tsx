@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Mic, Bot, User, Volume2, Loader } from 'lucide-react';
-import type { ChatMessage, ChatAction } from '@/lib/types';
+import type { ChatMessage } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { scheduleMeeting } from '@/ai/flows/schedule-meeting';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
@@ -14,33 +14,44 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Card, CardContent, CardHeader } from '../ui/card';
 
-type ChatMode = 'chatbot' | 'ai';
-
-const getInitialMessage = (mode: ChatMode): ChatMessage => ({
+const getInitialMessage = (): ChatMessage => ({
     id: crypto.randomUUID(),
     role: 'assistant',
-    content: mode === 'chatbot'
-        ? "Hi! I'm MeetAI. I can help you with:"
-        : "Hello! I'm MeetAI. How can I help you today?",
-    actions: mode === 'chatbot' ? [
-        { label: 'Schedule a meeting', value: 'Schedule a meeting' },
-        { label: 'Check weather report', value: 'What\'s the weather like today?' },
-        { label: 'View future meetings', value: 'Show me my upcoming meetings' },
-        { label: 'Add a new contact', value: 'Add a new contact' },
-    ] : []
+    content: "Hello! I'm MeetAI, your intelligent scheduling assistant. How can I help you today?",
 });
 
+const CHAT_HISTORY_KEY_PREFIX = 'chatHistory_';
 
 export default function Chatbot() {
-  const [mode, setMode] = useState<ChatMode>('chatbot');
-  const [messages, setMessages] = useState<ChatMessage[]>([getInitialMessage('chatbot')]);
+  const { user, addMeeting, addContact, meetings, updateUser, logout } = useUser();
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (typeof window !== 'undefined' && user.isLoggedIn) {
+        const savedHistory = localStorage.getItem(`${CHAT_HISTORY_KEY_PREFIX}${user.email}`);
+        return savedHistory ? JSON.parse(savedHistory) : [getInitialMessage()];
+    }
+    return [getInitialMessage()];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState<string | null>(null);
-  const { user, addMeeting, addContact, meetings, updateUser, logout } = useUser();
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (user.isLoggedIn) {
+        localStorage.setItem(`${CHAT_HISTORY_KEY_PREFIX}${user.email}`, JSON.stringify(messages));
+    }
+  }, [messages, user.email, user.isLoggedIn]);
+
+  useEffect(() => {
+    if (!user.isLoggedIn) {
+        setMessages([getInitialMessage()]);
+    } else {
+        const savedHistory = localStorage.getItem(`${CHAT_HISTORY_KEY_PREFIX}${user.email}`);
+        setMessages(savedHistory ? JSON.parse(savedHistory) : [getInitialMessage()]);
+    }
+  }, [user.isLoggedIn, user.email]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -71,11 +82,6 @@ export default function Chatbot() {
     }
   }
   
-  const handleModeChange = (newMode: ChatMode) => {
-    setMode(newMode);
-    setMessages([getInitialMessage(newMode)]);
-  }
-  
   const sendMessage = async (messageContent: string) => {
     if (!messageContent.trim() || isLoading) return;
     if (!user.isLoggedIn) {
@@ -101,7 +107,7 @@ export default function Chatbot() {
           workTime: `${user.workTime.start}-${user.workTime.end}`,
           offDays: user.offDays.map(d => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d]).join(','),
           meetings: user.meetings.map(m => ({ ...m, date: m.date.toISOString() })),
-          openAiMode: mode === 'ai',
+          openAiMode: true,
         });
         
         if (result.toolRequests) {
@@ -149,10 +155,6 @@ export default function Chatbot() {
     e.preventDefault();
     sendMessage(input);
   };
-  
-  const handleActionClick = (action: ChatAction) => {
-    sendMessage(action.value);
-  }
 
   return (
     <Card className="w-full max-w-3xl mx-auto h-full flex flex-col">
@@ -169,17 +171,6 @@ export default function Chatbot() {
       </CardHeader>
 
       <CardContent className="flex-grow flex flex-col gap-4 overflow-hidden p-0">
-        <div className="p-2 border-b px-6">
-          <p className="text-xs text-muted-foreground mb-2 px-1">Select AI Mode:</p>
-          <div className="flex gap-2">
-            <Button size="sm" variant={mode === 'chatbot' ? 'default' : 'outline'} onClick={() => handleModeChange('chatbot')}>
-              Chatbot
-            </Button>
-            <Button size="sm" variant={mode === 'ai' ? 'default' : 'outline'} onClick={() => handleModeChange('ai')}>
-              AI
-            </Button>
-          </div>
-        </div>
         <ScrollArea className="flex-1 px-6" ref={scrollAreaRef as any}>
           <div className="space-y-4 py-4">
             {messages.map((message) => (
@@ -213,7 +204,7 @@ export default function Chatbot() {
                      {message.actions && message.actions.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {message.actions.map((action, index) => (
-                                <Button key={index} size="sm" variant="outline" onClick={() => handleActionClick(action)} disabled={isLoading}>
+                                <Button key={index} size="sm" variant="outline" onClick={() => sendMessage(action.value)} disabled={isLoading}>
                                     {action.label}
                                 </Button>
                             ))}
