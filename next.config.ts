@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  env: {
+    WEATHERAPI_KEY: process.env.WEATHERAPI_KEY,
+    NEXT_PUBLIC_WEATHERAPI_KEY: process.env.NEXT_PUBLIC_WEATHERAPI_KEY,
+  }
 };
 
 export default nextConfig;
