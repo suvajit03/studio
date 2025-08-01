@@ -2,11 +2,21 @@
 
 import { useUser } from '@/components/providers/user-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Cloud, CloudRain, CloudSnow, Loader2, ArrowLeft, Wind, Thermometer } from 'lucide-react';
+import { Sun, Cloud, CloudRain, CloudSnow, Loader2, ArrowLeft, Wind, Thermometer, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '../ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
+import { motion } from 'framer-motion';
+
+interface HourForecast {
+    time: string;
+    temp: string;
+    condition: string;
+    icon: JSX.Element;
+}
 
 interface DailyForecast {
     date: string;
@@ -17,6 +27,7 @@ interface DailyForecast {
     icon: JSX.Element;
     wind: string;
     humidity: string;
+    hourly: HourForecast[];
 }
 
 const getWeatherIcon = (condition: string, size: number = 8) => {
@@ -50,6 +61,13 @@ export default function ForecastPage() {
             const data = await response.json();
             
             const processedForecast: DailyForecast[] = data.forecast.forecastday.map((day: any) => {
+                const hourly: HourForecast[] = day.hour.map((item: any) => ({
+                    time: format(new Date(item.time_epoch * 1000), 'ha'),
+                    temp: `${Math.round(item.temp_c)}°`,
+                    condition: item.condition.text,
+                    icon: getWeatherIcon(item.condition.text, 6),
+                }));
+
                 return {
                     date: format(new Date(day.date_epoch * 1000), 'MMMM d'),
                     day: format(new Date(day.date_epoch * 1000), 'EEEE'),
@@ -59,6 +77,7 @@ export default function ForecastPage() {
                     icon: getWeatherIcon(day.day.condition.text),
                     wind: `${Math.round(day.day.maxwind_kph)} km/h`,
                     humidity: `${day.day.avghumidity}%`,
+                    hourly: hourly,
                 };
             });
 
@@ -89,7 +108,7 @@ export default function ForecastPage() {
             </div>
         </header>
 
-        <main className="space-y-4">
+        <main className="space-y-2">
             {loading && <div className="flex items-center justify-center p-16"><Loader2 className="h-10 w-10 animate-spin" /></div>}
             {!loading && !user.isLoggedIn && (
                 <Card className="text-center p-8">
@@ -106,33 +125,66 @@ export default function ForecastPage() {
                 </Card>
             )}
             {!loading && forecast && (
-                <div className="grid grid-cols-1 gap-4">
+                <Accordion type="single" collapsible className="w-full space-y-2">
                     {forecast.map((day, index) => (
-                        <Card key={index} className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                           <div className="flex items-center gap-4 w-full sm:w-1/3">
-                                {day.icon}
-                                <div>
-                                    <p className="font-bold">{day.day}</p>
-                                    <p className="text-sm text-muted-foreground">{day.date}</p>
-                                </div>
-                           </div>
-                           <div className="w-full sm:w-1/3 text-center">
-                               <p className="font-semibold text-lg">{day.tempMax} / {day.tempMin}</p>
-                               <p className="text-sm text-muted-foreground">{day.condition}</p>
-                           </div>
-                           <div className="w-full sm:w-1/3 flex justify-around sm:justify-end gap-4 text-sm">
-                               <div className="flex items-center gap-2">
-                                   <Wind className="h-4 w-4 text-primary"/>
-                                   <span>{day.wind}</span>
-                               </div>
-                               <div className="flex items-center gap-2">
-                                   <Thermometer className="h-4 w-4 text-primary"/>
-                                   <span>{day.humidity}</span>
-                               </div>
-                           </div>
-                        </Card>
+                        <motion.div
+                            key={index}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.1 }}
+                        >
+                            <AccordionItem value={`item-${index}`} className="border-b-0">
+                                <Card className="p-0 overflow-hidden">
+                                    <AccordionTrigger className="p-4 hover:no-underline hover:bg-muted/50 transition-colors [&[data-state=open]]:bg-muted/50">
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+                                            <div className="flex items-center gap-4 w-full sm:w-1/3">
+                                                {day.icon}
+                                                <div>
+                                                    <p className="font-bold text-left">{index === 0 ? 'Today' : day.day}</p>
+                                                    <p className="text-sm text-muted-foreground">{day.date}</p>
+                                                </div>
+                                            </div>
+                                            <div className="w-full sm:w-1/3 text-center">
+                                                <p className="font-semibold text-lg">{day.tempMax} / {day.tempMin}</p>
+                                                <p className="text-sm text-muted-foreground">{day.condition}</p>
+                                            </div>
+                                            <div className="w-full sm:w-1/3 flex justify-around sm:justify-end gap-4 text-sm">
+                                                <div className="flex items-center gap-2">
+                                                    <Wind className="h-4 w-4 text-primary"/>
+                                                    <span>{day.wind}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Thermometer className="h-4 w-4 text-primary"/>
+                                                    <span>{day.humidity}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="p-4 border-t">
+                                            <h4 className="font-semibold mb-4 text-sm flex items-center gap-2"><Clock className="h-4 w-4"/> Hourly Forecast</h4>
+                                            <Carousel opts={{ align: "start" }} className="w-full">
+                                                <CarouselContent>
+                                                    {day.hourly.map((hour, hourIndex) => (
+                                                    <CarouselItem key={hourIndex} className="basis-1/4 sm:basis-1/5 md:basis-[12.5%]">
+                                                        <div className="flex flex-col items-center justify-center gap-2 p-2 rounded-lg bg-muted/30 h-full text-center">
+                                                            <p className="text-xs text-muted-foreground">{hour.time}</p>
+                                                            {hour.icon}
+                                                            <p className="font-bold text-base">{hour.temp}</p>
+                                                        </div>
+                                                    </CarouselItem>
+                                                    ))}
+                                                </CarouselContent>
+                                                <CarouselPrevious className="hidden md:flex"/>
+                                                <CarouselNext className="hidden md:flex"/>
+                                            </Carousel>
+                                        </div>
+                                    </AccordionContent>
+                                </Card>
+                            </AccordionItem>
+                        </motion.div>
                     ))}
-                </div>
+                </Accordion>
             )}
         </main>
     </div>
