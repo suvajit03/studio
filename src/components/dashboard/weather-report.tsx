@@ -119,7 +119,7 @@ export default function WeatherReport() {
       <CardHeader>
         <div className="flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0">
-                 <CardTitle className="text-xl sm:text-2xl">Current Weather</CardTitle>
+                 <CardTitle className="text-lg sm:text-2xl">Current Weather</CardTitle>
                 <CardDescription className="capitalize">
                     {user.isLoggedIn && user.location ? `Live report for ${user.location}.` : 'Log in and set a location.'}
                 </CardDescription>
