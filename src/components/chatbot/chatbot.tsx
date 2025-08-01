@@ -14,44 +14,59 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Card, CardContent, CardHeader } from '../ui/card';
 
-const getInitialMessage = (): ChatMessage => ({
+const getInitialMessage = (isLoggedIn: boolean): ChatMessage => {
+  if (!isLoggedIn) {
+    return {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: "Hello! I'm MeetAI. Please log in to get started.",
+    };
+  }
+
+  return {
     id: crypto.randomUUID(),
     role: 'assistant',
     content: "Hello! I'm MeetAI, your intelligent scheduling assistant. How can I help you today?",
-});
+    actions: [
+        { label: "Schedule a meeting", value: "Schedule a meeting" },
+        { label: "Check weather report", value: "What's the weather like today?" },
+        { label: "View my meetings", value: "Show me my upcoming meetings" },
+        { label: "Add a new contact", value: "Add a new contact" },
+    ]
+  };
+};
 
 const CHAT_HISTORY_KEY_PREFIX = 'chatHistory_';
 
 export default function Chatbot() {
-  const { user, addMeeting, addContact, meetings, updateUser, logout } = useUser();
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    if (typeof window !== 'undefined' && user.isLoggedIn) {
-        const savedHistory = localStorage.getItem(`${CHAT_HISTORY_KEY_PREFIX}${user.email}`);
-        return savedHistory ? JSON.parse(savedHistory) : [getInitialMessage()];
-    }
-    return [getInitialMessage()];
-  });
+  const { user, addMeeting, addContact, updateUser, logout } = useUser();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState<string | null>(null);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
+  
+  // Load initial messages or history from local storage
   useEffect(() => {
-    if (user.isLoggedIn) {
-        localStorage.setItem(`${CHAT_HISTORY_KEY_PREFIX}${user.email}`, JSON.stringify(messages));
-    }
-  }, [messages, user.email, user.isLoggedIn]);
-
-  useEffect(() => {
-    if (!user.isLoggedIn) {
-        setMessages([getInitialMessage()]);
+    const chatKey = user.isLoggedIn ? `${CHAT_HISTORY_KEY_PREFIX}${user.email}` : null;
+    if (chatKey) {
+        const savedHistory = localStorage.getItem(chatKey);
+        setMessages(savedHistory ? JSON.parse(savedHistory) : [getInitialMessage(true)]);
     } else {
-        const savedHistory = localStorage.getItem(`${CHAT_HISTORY_KEY_PREFIX}${user.email}`);
-        setMessages(savedHistory ? JSON.parse(savedHistory) : [getInitialMessage()]);
+        setMessages([getInitialMessage(false)]);
     }
   }, [user.isLoggedIn, user.email]);
+
+
+  // Save messages to local storage
+  useEffect(() => {
+    if (user.isLoggedIn && messages.length > 0) {
+        const chatKey = `${CHAT_HISTORY_KEY_PREFIX}${user.email}`;
+        localStorage.setItem(chatKey, JSON.stringify(messages));
+    }
+  }, [messages, user.email, user.isLoggedIn]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -155,6 +170,10 @@ export default function Chatbot() {
     e.preventDefault();
     sendMessage(input);
   };
+  
+  const handleActionClick = (value: string) => {
+    sendMessage(value);
+  }
 
   return (
     <Card className="w-full max-w-3xl mx-auto h-full flex flex-col">
@@ -204,7 +223,7 @@ export default function Chatbot() {
                      {message.actions && message.actions.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {message.actions.map((action, index) => (
-                                <Button key={index} size="sm" variant="outline" onClick={() => sendMessage(action.value)} disabled={isLoading}>
+                                <Button key={index} size="sm" variant="outline" onClick={() => handleActionClick(action.value)} disabled={isLoading}>
                                     {action.label}
                                 </Button>
                             ))}
