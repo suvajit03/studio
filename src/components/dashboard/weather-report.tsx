@@ -128,7 +128,7 @@ export default function WeatherReport() {
                 <Button asChild variant="outline" size="sm" className="shrink-0 text-[10px] sm:text-sm p-2 sm:p-3">
                     <Link href="/forecast">
                         <span>5-Day Forecast</span>
-                        <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4"/>
+                        <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4"/>
                     </Link>
                 </Button>
             }
