@@ -1,18 +1,46 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { useUser } from '@/components/providers/user-provider';
 import { Badge } from '@/components/ui/badge';
-import { isSameDay } from 'date-fns';
+import { isSameDay, format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import type { Meeting } from '@/lib/types';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Users } from 'lucide-react';
 
 export default function MyCalendar() {
   const { user } = useUser();
   const isMobile = useIsMobile();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [isDialogOpen, setDialogOpen] = useState(false);
 
   const meetingDates = useMemo(() => user.meetings.map(m => m.date), [user.meetings]);
+  
+  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const getParticipantDetails = (participantIds: string[]) => {
+    return participantIds.map(id => user.contacts.find(c => c.id === id)).filter(Boolean);
+  }
+
+  const meetingsOnSelectedDate = useMemo(() => {
+    if (!selectedDate) return [];
+    return user.meetings.filter(m => isSameDay(m.date, selectedDate));
+  }, [selectedDate, user.meetings]);
+
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    const meetingsExist = meetingDates.some(md => isSameDay(date, md));
+    if (meetingsExist) {
+        setSelectedDate(date);
+        setDialogOpen(true);
+    } else {
+        setSelectedDate(date);
+    }
+  }
 
   const modifiers = {
     offDay: (date: Date) => user.offDays.includes(date.getDay()),
@@ -26,6 +54,7 @@ export default function MyCalendar() {
     },
     meetingDay: {
       position: 'relative' as const,
+      fontWeight: 'bold',
     },
   };
 
@@ -34,6 +63,7 @@ export default function MyCalendar() {
   );
 
   return (
+    <>
     <Card className={isMobile ? "border-0 shadow-none" : ""}>
       <CardHeader>
         <CardTitle>My Calendar</CardTitle>
@@ -41,7 +71,8 @@ export default function MyCalendar() {
       <CardContent className="flex flex-col lg:flex-row gap-8 items-center justify-center">
         <Calendar
           mode="single"
-          selected={new Date()}
+          selected={selectedDate}
+          onSelect={handleDateSelect}
           modifiers={modifiers}
           modifiersStyles={modifiersStyles}
           components={{
@@ -72,5 +103,41 @@ export default function MyCalendar() {
         </div>
       </CardContent>
     </Card>
+
+    <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Meetings for {selectedDate && format(selectedDate, 'PPP')}</DialogTitle>
+                 <DialogDescription>
+                    You have {meetingsOnSelectedDate.length} meeting(s) scheduled on this day.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto -mr-4 pr-4">
+                {meetingsOnSelectedDate.map(meeting => (
+                     <Card key={meeting.id} className="bg-background/50">
+                        <CardContent className="p-3">
+                            <h4 className="font-semibold">{meeting.title}</h4>
+                            <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                <span>{format(meeting.date, "h:mm a")}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                                 <Users className="h-4 w-4 text-muted-foreground" />
+                                 <div className="flex -space-x-2 overflow-hidden">
+                                    {getParticipantDetails(meeting.participants).map(p => p && (
+                                        <Avatar key={p.id} className="inline-block h-6 w-6 border-2 border-card">
+                                            <AvatarImage src={`https://i.pravatar.cc/150?u=${p.email}`} />
+                                            <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
+                                        </Avatar>
+                                    ))}
+                                </div>
+                            </div>
+                            {meeting.notes && <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">{meeting.notes}</p>}
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
