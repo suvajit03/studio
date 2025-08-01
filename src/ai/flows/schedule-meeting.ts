@@ -72,8 +72,8 @@ export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<Sche
         return `You have no ${timeframe} meetings.`;
     }
 
-    const meetingSummary = relevantMeetings.map(m => `- "${m.title}" on ${format(new Date(m.date), 'PPP p')}`).join('\\n');
-    return `Here are your ${timeframe} meetings:\\n${meetingSummary}`;
+    const meetingSummary = relevantMeetings.map(m => `- "${m.title}" on ${format(new Date(m.date), 'PPP p')}`).join('\n');
+    return `Here are your ${timeframe} meetings:\n${meetingSummary}`;
   });
 
   const logoutUser = ai.defineTool({
