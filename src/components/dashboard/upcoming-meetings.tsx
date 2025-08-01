@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { Calendar, Users } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function UpcomingMeetings() {
     const { user } = useUser();
     const futureMeetings = user.meetings.filter(m => m.date >= new Date());
+    const isMobile = useIsMobile();
 
     const getParticipantDetails = (participantIds: string[]) => {
         return participantIds.map(id => user.contacts.find(c => c.id === id)).filter(Boolean);
@@ -17,7 +18,7 @@ export default function UpcomingMeetings() {
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
     return (
-        <Card>
+        <Card className={isMobile ? "border-0 shadow-none" : ""}>
             <CardHeader>
                 <CardTitle>Upcoming Meetings</CardTitle>
             </CardHeader>

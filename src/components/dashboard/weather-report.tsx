@@ -4,6 +4,7 @@ import { useUser } from '@/components/providers/user-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sun, Cloud, CloudRain, CloudSnow } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // This is a mock weather data structure.
 // In a real app, this would come from a weather API.
@@ -19,6 +20,7 @@ type WeatherType = keyof typeof weatherData;
 export default function WeatherReport() {
   const { user } = useUser();
   const [weather, setWeather] = useState<WeatherType>('sunny');
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // In a real app, you would fetch weather here based on user.location.
@@ -31,7 +33,7 @@ export default function WeatherReport() {
   const current_weather = weatherData[weather];
 
   return (
-    <Card>
+    <Card className={isMobile ? "border-0 shadow-none" : ""}>
       <CardHeader>
         <CardTitle>Current Weather</CardTitle>
         <CardDescription>Live weather report for {user.location}.</CardDescription>

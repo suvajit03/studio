@@ -6,9 +6,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { useUser } from '@/components/providers/user-provider';
 import { Badge } from '@/components/ui/badge';
 import { isSameDay } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function MyCalendar() {
   const { user } = useUser();
+  const isMobile = useIsMobile();
 
   const meetingDates = useMemo(() => user.meetings.map(m => m.date), [user.meetings]);
 
@@ -32,7 +34,7 @@ export default function MyCalendar() {
   );
 
   return (
-    <Card>
+    <Card className={isMobile ? "border-0 shadow-none" : ""}>
       <CardHeader>
         <CardTitle>My Calendar</CardTitle>
       </CardHeader>
@@ -53,7 +55,7 @@ export default function MyCalendar() {
           }}
           className="rounded-md border"
         />
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 self-start">
             <h4 className="font-semibold">Legend</h4>
             <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-sm border border-primary bg-primary/20"></div>
