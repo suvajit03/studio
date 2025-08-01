@@ -104,7 +104,7 @@ export function MainLayout() {
               </div>
               
               <div className="flex-1 flex justify-center">
-                <div className="flex items-center gap-1 sm:gap-4">
+                <div className="flex items-center gap-4">
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant="ghost" size="icon" className="md:w-auto md:px-4">
