@@ -2,11 +2,19 @@
 
 import { useUser } from '@/components/providers/user-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Cloud, CloudRain, CloudSnow, Thermometer, Wind, Loader2, Sunrise, Sunset, Eye, Gauge, CloudIcon as CloudinessIcon } from 'lucide-react';
+import { Sun, Cloud, CloudRain, CloudSnow, Thermometer, Wind, Loader2, Sunrise, Sunset, Eye, Gauge, CloudIcon as CloudinessIcon, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { format } from 'date-fns';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
+
+interface ForecastInfo {
+    time: string;
+    temp: string;
+    condition: string;
+    icon: JSX.Element;
+}
 
 interface WeatherInfo {
     temp: string;
@@ -22,6 +30,7 @@ interface WeatherInfo {
     cloudiness: string;
     sunrise: string;
     sunset: string;
+    forecast: ForecastInfo[];
 }
 
 const getWeatherIcon = (condition: string, size: number = 4) => {
@@ -44,27 +53,46 @@ export default function WeatherReport() {
         if (!user.location) return;
         setLoading(true);
         try {
-            const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${user.location}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to fetch weather');
+            const [currentWeatherResponse, forecastResponse] = await Promise.all([
+                 fetch(`https://api.openweathermap.org/data/2.5/weather?q=${user.location}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`),
+                 fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${user.location}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`)
+            ]);
+            
+            if (!currentWeatherResponse.ok) {
+                const errorData = await currentWeatherResponse.json();
+                throw new Error(errorData.message || 'Failed to fetch current weather');
             }
-            const data = await response.json();
+
+             if (!forecastResponse.ok) {
+                const errorData = await forecastResponse.json();
+                throw new Error(errorData.message || 'Failed to fetch forecast');
+            }
+
+            const currentData = await currentWeatherResponse.json();
+            const forecastData = await forecastResponse.json();
+
+            const hourlyForecasts: ForecastInfo[] = forecastData.list.slice(0, 8).map((item: any) => ({
+                time: format(new Date(item.dt * 1000), 'ha'),
+                temp: `${Math.round(item.main.temp)}°`,
+                condition: item.weather[0].main,
+                icon: getWeatherIcon(item.weather[0].main.toLowerCase(), 8),
+            }));
             
             setWeather({
-                temp: `${Math.round(data.main.temp)}°C`,
-                condition: data.weather[0].main,
-                icon: getWeatherIcon(data.weather[0].main.toLowerCase(), 16),
-                wind: `${data.wind.speed} km/h`,
-                humidity: `${data.main.humidity}%`,
-                feelsLike: `${Math.round(data.main.feels_like)}°C`,
-                tempMin: `${Math.round(data.main.temp_min)}°C`,
-                tempMax: `${Math.round(data.main.temp_max)}°C`,
-                pressure: `${data.main.pressure} hPa`,
-                visibility: `${data.visibility / 1000} km`,
-                cloudiness: `${data.clouds.all}%`,
-                sunrise: format(new Date(data.sys.sunrise * 1000), 'h:mm a'),
-                sunset: format(new Date(data.sys.sunset * 1000), 'h:mm a'),
+                temp: `${Math.round(currentData.main.temp)}°C`,
+                condition: currentData.weather[0].main,
+                icon: getWeatherIcon(currentData.weather[0].main.toLowerCase(), 16),
+                wind: `${currentData.wind.speed} km/h`,
+                humidity: `${currentData.main.humidity}%`,
+                feelsLike: `${Math.round(currentData.main.feels_like)}°C`,
+                tempMin: `${Math.round(currentData.main.temp_min)}°C`,
+                tempMax: `${Math.round(currentData.main.temp_max)}°C`,
+                pressure: `${currentData.main.pressure} hPa`,
+                visibility: `${currentData.visibility / 1000} km`,
+                cloudiness: `${currentData.clouds.all}%`,
+                sunrise: format(new Date(currentData.sys.sunrise * 1000), 'h:mm a'),
+                sunset: format(new Date(currentData.sys.sunset * 1000), 'h:mm a'),
+                forecast: hourlyForecasts,
             });
 
         } catch (error) {
@@ -107,6 +135,29 @@ export default function WeatherReport() {
                         <p className="text-xl text-muted-foreground">{weather.condition}</p>
                     </div>
                 </div>
+
+                <Card className="p-4">
+                     <CardTitle className="text-base flex items-center gap-2 mb-4">
+                        <Clock className="h-5 w-5"/>
+                        24-Hour Forecast
+                    </CardTitle>
+                    <Carousel opts={{ align: "start" }} className="w-full">
+                        <CarouselContent>
+                            {weather.forecast.map((hour, index) => (
+                            <CarouselItem key={index} className="basis-1/4 sm:basis-1/5 md:basis-1/6">
+                                <div className="flex flex-col items-center justify-center gap-2 p-2 rounded-lg bg-muted/50 h-full">
+                                    <p className="text-xs text-muted-foreground">{hour.time}</p>
+                                    {hour.icon}
+                                    <p className="font-bold text-lg">{hour.temp}</p>
+                                </div>
+                            </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="hidden md:flex"/>
+                        <CarouselNext className="hidden md:flex"/>
+                    </Carousel>
+                </Card>
+
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
                         <Wind className="h-5 w-5 text-primary" />
