@@ -117,7 +117,7 @@ export default function WeatherReport() {
   return (
     <Card className={isMobile ? "border-0 shadow-none" : ""}>
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
             <div>
                  <CardTitle>Current Weather</CardTitle>
                 <CardDescription className="capitalize">
