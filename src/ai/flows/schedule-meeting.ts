@@ -176,6 +176,20 @@ export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<Sche
     `,
   });
 
-  const {output} = await scheduleMeetingPrompt(input);
-  return output!;
+  const { output, toolRequests } = await scheduleMeetingPrompt(input);
+
+  if (!output) {
+    return { response: "I'm sorry, I couldn't process that. Please try again." };
+  }
+
+  return {
+    response: output.response,
+    toolRequests: toolRequests?.map(tr => ({
+      tool: {
+        name: tr.tool?.name || '',
+        input: tr.input || {},
+      },
+      input: tr.input,
+    })) || [],
+  };
 }

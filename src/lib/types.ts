@@ -86,8 +86,17 @@ export const ScheduleMeetingInputSchema = z.object({
 });
 export type ScheduleMeetingInput = z.infer<typeof ScheduleMeetingInputSchema>;
 
+const ToolRequestSchema = z.object({
+  tool: z.object({
+    name: z.string(),
+    input: z.any(),
+  }).optional(),
+  input: z.any().optional(),
+});
+
 export const ScheduleMeetingOutputSchema = z.object({
   response: z.string().describe('A summary of the action taken or a conversational reply.'),
+  toolRequests: z.array(ToolRequestSchema).optional().describe('A list of tool requests made by the AI.'),
 });
 export type ScheduleMeetingOutput = z.infer<typeof ScheduleMeetingOutputSchema>;
 

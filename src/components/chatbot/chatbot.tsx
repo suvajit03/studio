@@ -100,29 +100,31 @@ export default function Chatbot() {
         });
         
         // Handle tool side effects
-        result.toolRequests.forEach(req => {
-            if (req.tool?.name === 'createMeeting' && req.input) {
-                addMeeting(req.input);
-                toast({ title: 'Meeting Scheduled!', description: 'The meeting has been added to your calendar.' });
-            }
-             if (req.tool?.name === 'createNewContact' && req.input) {
-                addContact(req.input);
-                toast({ title: 'Contact Added!', description: `${req.input.name} has been added to your contacts.` });
-            }
-            if (req.tool?.name === 'updateUserSettings' && req.input) {
-                updateUser(req.input);
-                 toast({ title: 'Settings Updated!', description: 'Your account settings have been updated.' });
-            }
-            if (req.tool?.name === 'logoutUser') {
-                logout();
-                toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-            }
-        });
+        if (result.toolRequests) {
+            result.toolRequests.forEach(req => {
+                if (req.tool?.name === 'createMeeting' && req.input) {
+                    addMeeting(req.input);
+                    toast({ title: 'Meeting Scheduled!', description: 'The meeting has been added to your calendar.' });
+                }
+                 if (req.tool?.name === 'createNewContact' && req.input) {
+                    addContact(req.input);
+                    toast({ title: 'Contact Added!', description: `${req.input.name} has been added to your contacts.` });
+                }
+                if (req.tool?.name === 'updateUserSettings' && req.input) {
+                    updateUser(req.input);
+                     toast({ title: 'Settings Updated!', description: 'Your account settings have been updated.' });
+                }
+                if (req.tool?.name === 'logoutUser') {
+                    logout();
+                    toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+                }
+            });
+        }
 
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: result.output?.response || "I'm sorry, I couldn't process that. Please try again.",
+        content: result.response || "I'm sorry, I couldn't process that. Please try again.",
       };
       setMessages((prev) => [...prev, assistantMessage]);
 
