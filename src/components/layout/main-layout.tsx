@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, Menu, X, Bell } from 'lucide-react';
+import { Bot, Menu, X, Bell, Calendar, Sun } from 'lucide-react';
 import UpcomingMeetings from '@/components/dashboard/upcoming-meetings';
 import AuthButton from '@/components/auth/auth-button';
 import Chatbot from '@/components/chatbot/chatbot';
@@ -47,6 +47,34 @@ export function MainLayout() {
                   MeetAI
                 </h1>
               </div>
+              
+              <div className="flex-1 flex justify-center">
+                <div className="flex items-center gap-4">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost">
+                                <Calendar className="mr-2 h-4 w-4" />
+                                My Calendar
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto">
+                            <MyCalendar/>
+                        </PopoverContent>
+                    </Popover>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost">
+                                <Sun className="mr-2 h-4 w-4" />
+                                Weather
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto">
+                           <WeatherReport/>
+                        </PopoverContent>
+                    </Popover>
+                </div>
+              </div>
+
 
               <div className="flex items-center gap-4">
                  <Popover>
@@ -121,11 +149,6 @@ export function MainLayout() {
         </header>
 
         <div className="flex-grow flex overflow-hidden">
-            <aside className="w-96 border-r overflow-y-auto p-4 space-y-4">
-                <MyCalendar/>
-                <WeatherReport/>
-                <UpcomingMeetings/>
-            </aside>
             <main className="flex-1 flex p-4">
                 <Chatbot />
             </main>
