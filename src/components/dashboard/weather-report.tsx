@@ -11,8 +11,9 @@ import { format } from 'date-fns';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 import Link from 'next/link';
 import { Button } from '../ui/button';
-import type { WeatherInfo, WeatherMetric, ForecastInfo } from '@/lib/types';
+import type { WeatherInfo, WeatherMetric, ForecastInfo, HourData } from '@/lib/types';
 import WeatherDetailDialog from './weather-detail-dialog';
+import HourlyDetailDialog from './hourly-detail-dialog';
 
 const getWeatherIcon = (condition: string, size: number = 4) => {
     const s = `h-${size} w-${size}`;
@@ -31,7 +32,7 @@ const weatherMetrics: WeatherMetric[] = [
     { name: 'Pressure', key: 'pressure_mb', unit: ' hPa', icon: Gauge, precision: 0 },
     { name: 'Visibility', key: 'avgvis_km', unit: ' km', icon: Eye, precision: 0 },
     { name: 'Cloudiness', key: 'cloud', unit: '%', icon: CloudinessIcon, precision: 0 },
-    { name: 'Temperature', key: 'avgtemp_c', unit: '°C', icon: Thermometer, precision: 1}
+    { name: 'Temperature', key: 'temp_c', unit: '°C', icon: Thermometer, precision: 1}
 ];
 
 export default function WeatherReport() {
@@ -39,7 +40,9 @@ export default function WeatherReport() {
   const [weather, setWeather] = useState<WeatherInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDetailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [isHourlyDetailOpen, setHourlyDetailOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<WeatherMetric | null>(null);
+  const [selectedHour, setSelectedHour] = useState<HourData | null>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -68,6 +71,7 @@ export default function WeatherReport() {
                 temp: `${Math.round(item.temp_c)}°`,
                 condition: item.condition.text,
                 icon: getWeatherIcon(item.condition.text, 8),
+                hourData: item,
             }));
             
             setWeather({
@@ -109,6 +113,11 @@ export default function WeatherReport() {
   const handleMetricClick = (metric: WeatherMetric) => {
     setSelectedMetric(metric);
     setDetailDialogOpen(true);
+  }
+
+  const handleHourClick = (hourData: HourData) => {
+    setSelectedHour(hourData);
+    setHourlyDetailOpen(true);
   }
 
   const getMetricValue = (metricKey: keyof WeatherInfo['day'] | keyof WeatherInfo['current'], precision: number) => {
@@ -167,11 +176,14 @@ export default function WeatherReport() {
                         <CarouselContent>
                             {weather.forecast.map((hour, index) => (
                             <CarouselItem key={index} className="basis-1/3 sm:basis-1/4 md:basis-1/5 lg:basis-[12.5%]">
-                                <div className="flex flex-col items-center justify-center gap-2 p-2 rounded-lg bg-muted/50 h-full">
+                                <button
+                                  className="flex flex-col items-center justify-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors h-full w-full text-center"
+                                  onClick={() => handleHourClick(hour.hourData)}
+                                >
                                     <p className="text-xs text-muted-foreground">{hour.time}</p>
                                     {hour.icon}
                                     <p className="font-bold text-lg">{hour.temp}</p>
-                                </div>
+                                </button>
                             </CarouselItem>
                             ))}
                         </CarouselContent>
@@ -230,8 +242,11 @@ export default function WeatherReport() {
         metric={selectedMetric}
         location={user.location}
     />
+    <HourlyDetailDialog
+        open={isHourlyDetailOpen}
+        onOpenChange={setHourlyDetailOpen}
+        hour={selectedHour}
+    />
     </>
   );
 }
-
-    

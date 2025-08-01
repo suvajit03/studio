@@ -92,12 +92,24 @@ export const TextToSpeechOutputSchema = z.object({
 });
 export type TextToSpeechOutput = z.infer<typeof TextToSpeechOutputSchema>;
 
+export interface HourData {
+    time: string;
+    temp_c: number;
+    condition: { text: string; icon: string; };
+    wind_kph: number;
+    pressure_mb: number;
+    humidity: number;
+    cloud: number;
+    feelslike_c: number;
+    vis_km: number;
+}
 
 export interface ForecastInfo {
     time: string;
     temp: string;
     condition: string;
     icon: JSX.Element;
+    hourData: HourData;
 }
 
 export interface WeatherInfo {
@@ -137,5 +149,3 @@ export interface HistoricalData extends WeatherDataBase {
 export interface ForecastData extends WeatherDataBase {
     type: 'forecast';
 }
-
-    
