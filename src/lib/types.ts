@@ -7,6 +7,15 @@ export interface Contact {
   number?: string;
 }
 
+export const MeetingSchema = z.object({
+  title: z.string().describe('The title of the meeting.'),
+  date: z.string().describe('The date and time of the meeting in ISO 8601 format.'),
+  participants: z.array(z.string()).describe('An array of participant contact IDs.'),
+  notes: z.string().optional().describe('Optional notes for the meeting.'),
+});
+export type MeetingData = z.infer<typeof MeetingSchema>;
+
+
 export interface Meeting {
   id: string;
   title: string;
@@ -36,6 +45,28 @@ export interface ChatMessage {
   content: string;
   isStreaming?: boolean;
 }
+
+export const ScheduleMeetingInputSchema = z.object({
+  instruction: z.string().describe('The user\'s instruction for scheduling a meeting.'),
+  contacts: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      email: z.string(),
+      number: z.string().optional(),
+  })).describe('The user\'s contact list.'),
+  userName: z.string(),
+  userLocation: z.string(),
+  workTime: z.string(),
+  offDays: z.string(),
+});
+export type ScheduleMeetingInput = z.infer<typeof ScheduleMeetingInputSchema>;
+
+export const ScheduleMeetingOutputSchema = z.object({
+  meetingDetails: z.string().describe('A summary of the scheduled meeting.'),
+  inviteSent: z.boolean().describe('Indicates if the meeting invite was sent.'),
+});
+export type ScheduleMeetingOutput = z.infer<typeof ScheduleMeetingOutputSchema>;
+
 
 export const GenerateAvatarInputSchema = z.object({
   description: z.string().describe('A description of the desired avatar.'),

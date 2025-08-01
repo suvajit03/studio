@@ -14,41 +14,8 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { addMeeting } from '@/lib/firebase-service';
+import { ScheduleMeetingInputSchema, ScheduleMeetingOutputSchema, MeetingSchema, type ScheduleMeetingInput, type ScheduleMeetingOutput } from '@/lib/types';
 
-const ContactSchema = z.object({
-  id: z.string().describe('Contact ID'),
-  name: z.string().describe('Contact name'),
-  email: z.string().email().describe('Contact email address'),
-  number: z.string().optional().describe('Contact phone number'),
-});
-
-const MeetingSchema = z.object({
-    title: z.string().describe('The title of the meeting.'),
-    date: z.string().datetime().describe('The date and time of the meeting in ISO 8601 format.'),
-    participants: z.array(z.string()).describe('A list of contact IDs for the participants.'),
-    notes: z.string().optional().describe('Any notes for the meeting.'),
-});
-
-const ScheduleMeetingInputSchema = z.object({
-  instruction: z.string().describe(
-    'Natural language instruction for scheduling the meeting.  ' +
-      'Example: Schedule a meeting with John Doe tomorrow at 2pm to discuss the quarterly report.'
-  ),
-  contacts: z.array(ContactSchema).optional().describe('List of available contacts.'),
-  userName: z.string().describe('The name of the user scheduling the meeting'),
-  userLocation: z.string().describe('The location of the user'),
-  workTime: z.string().describe('The working hours of the user'),
-  offDays: z.string().describe('Weekly off days of the user'),
-});
-
-export type ScheduleMeetingInput = z.infer<typeof ScheduleMeetingInputSchema>;
-
-const ScheduleMeetingOutputSchema = z.object({
-  meetingDetails: z.string().describe('A summary of the scheduled meeting details.'),
-  inviteSent: z.boolean().describe('Indicates if the meeting invite was successfully sent.'),
-});
-
-export type ScheduleMeetingOutput = z.infer<typeof ScheduleMeetingOutputSchema>;
 
 export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<ScheduleMeetingOutput> {
   return scheduleMeetingFlow(input);
