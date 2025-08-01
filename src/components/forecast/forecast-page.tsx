@@ -21,10 +21,11 @@ interface DailyForecast {
 
 const getWeatherIcon = (condition: string, size: number = 8) => {
     const s = `h-${size} w-${size}`;
-    if (condition.includes('sun') || condition.includes('clear')) return <Sun className={`${s} text-yellow-400`} />;
-    if (condition.includes('cloud')) return <Cloud className={`${s} text-gray-400`} />;
-    if (condition.includes('rain')) return <CloudRain className={`${s} text-blue-400`} />;
-    if (condition.includes('snow')) return <CloudSnow className={`${s} text-white`} />;
+    const lowerCaseCondition = condition.toLowerCase();
+    if (lowerCaseCondition.includes('sun') || lowerCaseCondition.includes('clear')) return <Sun className={`${s} text-yellow-400`} />;
+    if (lowerCaseCondition.includes('cloud') || lowerCaseCondition.includes('overcast')) return <Cloud className={`${s} text-gray-400`} />;
+    if (lowerCaseCondition.includes('rain')) return <CloudRain className={`${s} text-blue-400`} />;
+    if (lowerCaseCondition.includes('snow')) return <CloudSnow className={`${s} text-white`} />;
     return <Sun className={`${s} text-yellow-400`} />;
 }
 
@@ -41,46 +42,25 @@ export default function ForecastPage() {
         };
         setLoading(true);
         try {
-            const response = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${user.location}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`);
+            const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${process.env.NEXT_PUBLIC_WEATHERAPI_KEY}&q=${user.location}&days=5`);
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to fetch forecast');
+                throw new Error(errorData.error.message || 'Failed to fetch forecast');
             }
             const data = await response.json();
             
-            // Process data to get one forecast per day
-            const dailyData: { [key: string]: any[] } = {};
-            data.list.forEach((item: any) => {
-                const date = format(new Date(item.dt * 1000), 'yyyy-MM-dd');
-                if (!dailyData[date]) {
-                    dailyData[date] = [];
-                }
-                dailyData[date].push(item);
-            });
-
-            const processedForecast: DailyForecast[] = Object.keys(dailyData).map(date => {
-                const dayItems = dailyData[date];
-                const tempMax = Math.round(Math.max(...dayItems.map(i => i.main.temp_max)));
-                const tempMin = Math.round(Math.min(...dayItems.map(i => i.main.temp_min)));
-                const dominantWeather = dayItems.reduce((acc, curr) => {
-                    acc[curr.weather[0].main] = (acc[curr.weather[0].main] || 0) + 1;
-                    return acc;
-                }, {} as {[key:string]: number});
-                const condition = Object.keys(dominantWeather).reduce((a, b) => dominantWeather[a] > dominantWeather[b] ? a : b);
-                const wind = `${Math.round(dayItems[0].wind.speed)} km/h`;
-                const humidity = `${dayItems[0].main.humidity}%`;
-
+            const processedForecast: DailyForecast[] = data.forecast.forecastday.map((day: any) => {
                 return {
-                    date: format(new Date(date), 'MMMM d'),
-                    day: format(new Date(date), 'EEEE'),
-                    tempMax: `${tempMax}°`,
-                    tempMin: `${tempMin}°`,
-                    condition: condition,
-                    icon: getWeatherIcon(condition.toLowerCase()),
-                    wind,
-                    humidity,
+                    date: format(new Date(day.date_epoch * 1000), 'MMMM d'),
+                    day: format(new Date(day.date_epoch * 1000), 'EEEE'),
+                    tempMax: `${Math.round(day.day.maxtemp_c)}°`,
+                    tempMin: `${Math.round(day.day.mintemp_c)}°`,
+                    condition: day.day.condition.text,
+                    icon: getWeatherIcon(day.day.condition.text),
+                    wind: `${Math.round(day.day.maxwind_kph)} km/h`,
+                    humidity: `${day.day.avghumidity}%`,
                 };
-            }).slice(0, 5); // API provides 5 days
+            });
 
             setForecast(processedForecast);
 

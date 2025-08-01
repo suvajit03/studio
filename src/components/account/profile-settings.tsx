@@ -129,14 +129,14 @@ export default function ProfileSettings({ onSaveChanges }: ProfileSettingsProps)
         async (position) => {
             const { latitude, longitude } = position.coords;
             try {
-                const response = await fetch(`https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}`);
+                const response = await fetch(`https://api.weatherapi.com/v1/current.json?key=${process.env.NEXT_PUBLIC_WEATHERAPI_KEY}&q=${latitude},${longitude}`);
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to fetch location name');
+                    throw new Error(errorData.error.message || 'Failed to fetch location name');
                 }
                 const data = await response.json();
-                if (data.length > 0) {
-                    const locationName = `${data[0].name}, ${data[0].country}`;
+                if (data.location) {
+                    const locationName = `${data.location.name}, ${data.location.country}`;
                     form.setValue('location', locationName.toLowerCase());
                     toast({ title: "Location updated!", description: `Your location has been set to ${locationName}.` });
                 } else {

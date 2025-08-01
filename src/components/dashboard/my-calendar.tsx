@@ -30,10 +30,11 @@ interface WeatherInfo {
 
 const getWeatherIcon = (condition: string) => {
     const s = `h-6 w-6`;
-    if (condition.includes('sun') || condition.includes('clear')) return <Sun className={`${s} text-yellow-400`} />;
-    if (condition.includes('cloud')) return <Cloud className={`${s} text-gray-400`} />;
-    if (condition.includes('rain')) return <CloudRain className={`${s} text-blue-400`} />;
-    if (condition.includes('snow')) return <CloudSnow className={`${s} text-white`} />;
+    const lowerCaseCondition = condition.toLowerCase();
+    if (lowerCaseCondition.includes('sun') || lowerCaseCondition.includes('clear')) return <Sun className={`${s} text-yellow-400`} />;
+    if (lowerCaseCondition.includes('cloud') || lowerCaseCondition.includes('overcast')) return <Cloud className={`${s} text-gray-400`} />;
+    if (lowerCaseCondition.includes('rain')) return <CloudRain className={`${s} text-blue-400`} />;
+    if (lowerCaseCondition.includes('snow')) return <CloudSnow className={`${s} text-white`} />;
     return <Sun className={`${s} text-yellow-400`} />;
 }
 
@@ -65,23 +66,19 @@ export default function MyCalendar() {
     if (!user.location) return;
     setLoadingWeather(true);
     try {
-      // Note: OpenWeatherMap free tier only provides forecast for up to 5 days.
-      // This is a simplified implementation.
-      const response = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${user.location}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`);
+      const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${process.env.NEXT_PUBLIC_WEATHERAPI_KEY}&q=${user.location}&dt=${format(date, 'yyyy-MM-dd')}`);
        if (!response.ok) throw new Error('Failed to fetch weather forecast');
       const data = await response.json();
-      const forecast = data.list.find((item: any) => {
-        return isSameDay(new Date(item.dt * 1000), date);
-      });
+      const forecast = data.forecast?.forecastday[0];
 
       if (forecast) {
         setWeather({
-          temp: `${Math.round(forecast.main.temp)}°C`,
-          condition: forecast.weather[0].main,
-          icon: getWeatherIcon(forecast.weather[0].main.toLowerCase()),
+          temp: `${Math.round(forecast.day.avgtemp_c)}°C`,
+          condition: forecast.day.condition.text,
+          icon: getWeatherIcon(forecast.day.condition.text),
         });
       } else {
-        setWeather(null); // No forecast for this day
+        setWeather(null);
       }
     } catch (error) {
       console.error(error);

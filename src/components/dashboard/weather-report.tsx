@@ -37,10 +37,11 @@ interface WeatherInfo {
 
 const getWeatherIcon = (condition: string, size: number = 4) => {
     const s = `h-${size} w-${size}`;
-    if (condition.includes('sun') || condition.includes('clear')) return <Sun className={`${s} text-yellow-400`} />;
-    if (condition.includes('cloud')) return <Cloud className={`${s} text-gray-400`} />;
-    if (condition.includes('rain')) return <CloudRain className={`${s} text-blue-400`} />;
-    if (condition.includes('snow')) return <CloudSnow className={`${s} text-white`} />;
+    const lowerCaseCondition = condition.toLowerCase();
+    if (lowerCaseCondition.includes('sun') || lowerCaseCondition.includes('clear')) return <Sun className={`${s} text-yellow-400`} />;
+    if (lowerCaseCondition.includes('cloud') || lowerCaseCondition.includes('overcast')) return <Cloud className={`${s} text-gray-400`} />;
+    if (lowerCaseCondition.includes('rain')) return <CloudRain className={`${s} text-blue-400`} />;
+    if (lowerCaseCondition.includes('snow')) return <CloudSnow className={`${s} text-white`} />;
     return <Sun className={`${s} text-yellow-400`} />;
 }
 
@@ -55,45 +56,38 @@ export default function WeatherReport() {
         if (!user.location) return;
         setLoading(true);
         try {
-            const [currentWeatherResponse, forecastResponse] = await Promise.all([
-                 fetch(`https://api.openweathermap.org/data/2.5/weather?q=${user.location}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`),
-                 fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${user.location}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`)
-            ]);
+            const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${process.env.NEXT_PUBLIC_WEATHERAPI_KEY}&q=${user.location}&days=1`);
             
-            if (!currentWeatherResponse.ok) {
-                const errorData = await currentWeatherResponse.json();
-                throw new Error(errorData.message || 'Failed to fetch current weather');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error.message || 'Failed to fetch weather');
             }
 
-             if (!forecastResponse.ok) {
-                const errorData = await forecastResponse.json();
-                throw new Error(errorData.message || 'Failed to fetch forecast');
-            }
+            const data = await response.json();
+            const currentData = data.current;
+            const forecastData = data.forecast.forecastday[0];
 
-            const currentData = await currentWeatherResponse.json();
-            const forecastData = await forecastResponse.json();
-
-            const hourlyForecasts: ForecastInfo[] = forecastData.list.slice(0, 8).map((item: any) => ({
-                time: format(new Date(item.dt * 1000), 'ha'),
-                temp: `${Math.round(item.main.temp)}°`,
-                condition: item.weather[0].main,
-                icon: getWeatherIcon(item.weather[0].main.toLowerCase(), 8),
+            const hourlyForecasts: ForecastInfo[] = forecastData.hour.slice(new Date().getHours()).slice(0, 8).map((item: any) => ({
+                time: format(new Date(item.time_epoch * 1000), 'ha'),
+                temp: `${Math.round(item.temp_c)}°`,
+                condition: item.condition.text,
+                icon: getWeatherIcon(item.condition.text, 8),
             }));
             
             setWeather({
-                temp: `${Math.round(currentData.main.temp)}°C`,
-                condition: currentData.weather[0].main,
-                icon: getWeatherIcon(currentData.weather[0].main.toLowerCase(), 16),
-                wind: `${currentData.wind.speed} km/h`,
-                humidity: `${currentData.main.humidity}%`,
-                feelsLike: `${Math.round(currentData.main.feels_like)}°C`,
-                tempMin: `${Math.round(currentData.main.temp_min)}°C`,
-                tempMax: `${Math.round(currentData.main.temp_max)}°C`,
-                pressure: `${currentData.main.pressure} hPa`,
-                visibility: `${currentData.visibility / 1000} km`,
-                cloudiness: `${currentData.clouds.all}%`,
-                sunrise: format(new Date(currentData.sys.sunrise * 1000), 'h:mm a'),
-                sunset: format(new Date(currentData.sys.sunset * 1000), 'h:mm a'),
+                temp: `${Math.round(currentData.temp_c)}°C`,
+                condition: currentData.condition.text,
+                icon: getWeatherIcon(currentData.condition.text, 16),
+                wind: `${currentData.wind_kph} km/h`,
+                humidity: `${currentData.humidity}%`,
+                feelsLike: `${Math.round(currentData.feelslike_c)}°C`,
+                tempMin: `${Math.round(forecastData.day.mintemp_c)}°C`,
+                tempMax: `${Math.round(forecastData.day.maxtemp_c)}°C`,
+                pressure: `${currentData.pressure_mb} hPa`,
+                visibility: `${currentData.vis_km} km`,
+                cloudiness: `${currentData.cloud}%`,
+                sunrise: forecastData.astro.sunrise,
+                sunset: forecastData.astro.sunset,
                 forecast: hourlyForecasts,
             });
 

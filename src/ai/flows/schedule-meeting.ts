@@ -47,12 +47,12 @@ export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<Sche
   },
   async (input) => {
     try {
-      const weatherResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${input.location}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`);
+      const weatherResponse = await fetch(`https://api.weatherapi.com/v1/current.json?key=${process.env.WEATHERAPI_KEY}&q=${input.location}`);
       if (!weatherResponse.ok) {
           return `Sorry, I couldn't get the weather for ${input.location}.`;
       }
       const weather = await weatherResponse.json();
-      return `The weather in ${input.location} is ${weather.weather[0].description} with a temperature of ${weather.main.temp} degrees Celsius.`
+      return `The weather in ${input.location} is ${weather.current.condition.text} with a temperature of ${weather.current.temp_c} degrees Celsius.`
     } catch(e) {
       console.error(e);
       return `Sorry, I couldn't get the weather for ${input.location}.`;
