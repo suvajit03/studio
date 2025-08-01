@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import type { UserData, Contact, Meeting } from '@/lib/types';
 import { DUMMY_USER_DATA, DUMMY_CONTACTS, DUMMY_MEETINGS } from '@/lib/dummy-data';
-import { onMeetingsUpdate, onContactsUpdate, updateUser as updateFirebaseUser, addContact as addFirebaseContact, updateContact as updateFirebaseContact, deleteContact as deleteFirebaseContact } from '@/lib/firebase-service';
+import { onMeetingsUpdate, onContactsUpdate, updateUser as updateFirebaseUser, addContact as addFirebaseContact, updateContact as updateFirebaseContact, deleteContact as deleteFirebaseContact, deleteMeeting as deleteFirebaseMeeting } from '@/lib/firebase-service';
 
 interface UserContextType {
   user: UserData;
@@ -14,6 +14,7 @@ interface UserContextType {
   addContact: (contact: Omit<Contact, 'id'>) => void;
   updateContact: (contact: Contact) => void;
   deleteContact: (contactId: string) => void;
+  deleteMeeting: (meetingId: string) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -76,8 +77,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     deleteFirebaseContact(contactId);
   }
 
+  const deleteMeeting = (meetingId: string) => {
+    deleteFirebaseMeeting(meetingId);
+  }
+
   const contextValue = useMemo(
-    () => ({ user, login, logout, updateUser, addContact, updateContact, deleteContact }),
+    () => ({ user, login, logout, updateUser, addContact, updateContact, deleteContact, deleteMeeting }),
     [user]
   );
 

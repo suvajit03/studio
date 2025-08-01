@@ -3,11 +3,13 @@ import { useUser } from '@/components/providers/user-provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
-import { Calendar, Users } from 'lucide-react';
+import { Calendar, Users, Trash } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '../ui/dialog';
 
 export default function UpcomingMeetings() {
-    const { user } = useUser();
+    const { user, deleteMeeting } = useUser();
     const futureMeetings = user.meetings.filter(m => m.date >= new Date());
     const isMobile = useIsMobile();
 
@@ -25,9 +27,32 @@ export default function UpcomingMeetings() {
             <CardContent>
                 <div className="space-y-3">
                     {futureMeetings.length > 0 ? futureMeetings.map(meeting => (
-                        <Card key={meeting.id} className="bg-background/50">
+                        <Card key={meeting.id} className="bg-background/50 relative group">
+                             <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Trash className="h-4 w-4" />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Delete Meeting</DialogTitle>
+                                        <DialogDescription>
+                                            Are you sure you want to delete the meeting "{meeting.title}"? This action cannot be undone.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                            <Button variant="outline">Cancel</Button>
+                                        </DialogClose>
+                                        <DialogClose asChild>
+                                            <Button variant="destructive" onClick={() => deleteMeeting(meeting.id)}>Delete</Button>
+                                        </DialogClose>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                             <CardContent className="p-3">
-                                <h4 className="font-semibold">{meeting.title}</h4>
+                                <h4 className="font-semibold pr-8">{meeting.title}</h4>
                                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                                     <Calendar className="h-4 w-4" />
                                     <span>{format(meeting.date, "EEE, MMM d 'at' h:mm a")}</span>

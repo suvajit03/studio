@@ -45,6 +45,11 @@ export async function addMeeting(meeting: Omit<Meeting, 'id'>) {
     return newMeeting;
 }
 
+export async function deleteMeeting(meetingId: string) {
+    meetings = meetings.filter(m => m.id !== meetingId);
+    notifyMeetingsListeners();
+}
+
 export async function addContact(contact: Omit<Contact, 'id'>) {
     const newContact = { ...contact, id: crypto.randomUUID() };
     contacts = [...contacts, newContact];
