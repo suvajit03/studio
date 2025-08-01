@@ -17,10 +17,12 @@ export default function UpcomingMeetings() {
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
     return (
-        <div className="px-2">
-            <h3 className="text-sm font-semibold text-muted-foreground px-2 py-1">Upcoming Meetings</h3>
-            <ScrollArea className="h-[calc(100vh-8rem)]">
-                <div className="space-y-3 p-2">
+        <Card>
+            <CardHeader>
+                <CardTitle>Upcoming Meetings</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
                     {futureMeetings.length > 0 ? futureMeetings.map(meeting => (
                         <Card key={meeting.id} className="bg-background/50">
                             <CardContent className="p-3">
@@ -47,7 +49,7 @@ export default function UpcomingMeetings() {
                         <p className="text-sm text-muted-foreground p-4 text-center">No upcoming meetings.</p>
                     )}
                 </div>
-            </ScrollArea>
-        </div>
+            </CardContent>
+        </Card>
     );
 }

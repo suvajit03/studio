@@ -23,6 +23,8 @@ import {
 import { useUser } from '../providers/user-provider';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import MyCalendar from '../dashboard/my-calendar';
+import WeatherReport from '../dashboard/weather-report';
 
 export function MainLayout() {
   const { user } = useUser();
@@ -37,25 +39,11 @@ export function MainLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen w-full bg-background">
-        <Sidebar>
-          <SidebarContent>
-            <SidebarHeader>
-              <h2 className="text-xl font-semibold font-headline">MeetAI</h2>
-            </SidebarHeader>
-            <UpcomingMeetings />
-          </SidebarContent>
-        </Sidebar>
-        <SidebarInset>
-          <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="h-screen w-full bg-background flex flex-col">
+        <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center justify-between">
               <div className="flex items-center gap-4">
-                <SidebarTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden">
-                    <Menu />
-                  </Button>
-                </SidebarTrigger>
-                <h1 className="hidden text-2xl font-bold md:block font-headline text-primary">
+                <h1 className="text-2xl font-bold md:block font-headline text-primary">
                   MeetAI
                 </h1>
               </div>
@@ -130,12 +118,18 @@ export function MainLayout() {
                 <AuthButton />
               </div>
             </div>
-          </header>
+        </header>
 
-          <main className="container h-[calc(100vh-4rem)] py-4">
-            <Chatbot />
-          </main>
-        </SidebarInset>
+        <div className="flex-grow flex overflow-hidden">
+            <aside className="w-96 border-r overflow-y-auto p-4 space-y-4">
+                <MyCalendar/>
+                <WeatherReport/>
+                <UpcomingMeetings/>
+            </aside>
+            <main className="flex-1 flex p-4">
+                <Chatbot />
+            </main>
+        </div>
       </div>
     </SidebarProvider>
   );
