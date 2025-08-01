@@ -71,6 +71,10 @@ export interface ChatMessage {
 
 export const ScheduleMeetingInputSchema = z.object({
   instruction: z.string().describe('The user\'s instruction for scheduling a meeting.'),
+  history: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string(),
+  })).optional().describe('The recent chat history to provide context.'),
   contacts: z.array(z.object({
       id: z.string(),
       name: z.string(),

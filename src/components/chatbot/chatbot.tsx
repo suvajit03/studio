@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -109,13 +110,18 @@ export default function Chatbot() {
       role: 'user',
       content: messageContent,
     };
-    setMessages((prev) => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput('');
     setIsLoading(true);
+
+    // Get the last 10 messages for context, removing IDs and actions
+    const historyForAI = newMessages.slice(-10).map(({ id, actions, ...releventData }) => releventData);
 
     try {
         const result = await scheduleMeeting({
           instruction: messageContent,
+          history: historyForAI,
           contacts: user.contacts,
           userName: user.name,
           userLocation: user.location,

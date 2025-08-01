@@ -164,11 +164,22 @@ const scheduleMeetingPrompt = ai.definePrompt({
   {{else}}
   No meetings scheduled.
   {{/if}}
+
+  This is the recent conversation history. Use it to understand context from previous turns:
+  {{#if history}}
+  {{#each history}}
+  {{#if (eq role 'user')}}
+  User: {{content}}
+  {{else}}
+  AI: {{content}}
+  {{/if}}
+  {{/each}}
+  {{/if}}
   
   User's Instruction: {{{instruction}}}
 
   Your Task:
-  Based on the user's instruction, decide which tool to use, if any.
+  Based on the conversation history and the user's latest instruction, decide which tool to use, if any.
   - Be conversational and proactive. If you need information, ask for it clearly. For example, if a user wants to schedule a meeting, ask for the title, date, and time if they are missing.
   - If you have all the information needed for a tool, use it. Once a tool is used (e.g., a meeting is created), confirm this with the user.
   - Meetings cannot be in the past. If a user tries to schedule a meeting in the past, politely inform them and ask for a future date/time.
