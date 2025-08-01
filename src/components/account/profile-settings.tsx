@@ -9,12 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload } from 'lucide-react';
+import { Check, ChevronsUpDown, Upload } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { generateAvatar } from '@/ai/flows/generate-avatar';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Textarea } from '../ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
+import { cn } from '@/lib/utils';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name is too short'),
@@ -35,6 +38,17 @@ const daysOfWeek = [
   { id: 5, label: 'Friday' },
   { id: 6, label: 'Saturday' },
 ];
+
+const locations = [
+    { value: "london, uk", label: "London, UK" },
+    { value: "new york, usa", label: "New York, USA" },
+    { value: "tokyo, japan", label: "Tokyo, Japan" },
+    { value: "paris, france", label: "Paris, France" },
+    { value: "sydney, australia", label: "Sydney, Australia" },
+    { value: "dubai, uae", label: "Dubai, UAE" },
+    { value: "singapore", label: "Singapore" },
+    { value: "toronto, canada", label: "Toronto, Canada" },
+]
 
 export default function ProfileSettings() {
   const { user, updateUser } = useUser();
@@ -132,12 +146,61 @@ export default function ProfileSettings() {
                 control={form.control}
                 name="location"
                 render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl><Input placeholder="e.g. London, UK" {...field} /></FormControl>
-                    <FormDescription>Used for weather reports and time zone adjustments.</FormDescription>
-                    <FormMessage />
-                </FormItem>
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Location</FormLabel>
+                        <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                "w-full justify-between",
+                                !field.value && "text-muted-foreground"
+                                )}
+                            >
+                                {field.value
+                                ? locations.find(
+                                    (location) => location.value === field.value
+                                )?.label
+                                : "Select location"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                                <CommandInput placeholder="Search location..." />
+                                <CommandList>
+                                    <CommandEmpty>No location found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {locations.map((location) => (
+                                        <CommandItem
+                                            value={location.label}
+                                            key={location.value}
+                                            onSelect={() => {
+                                                form.setValue("location", location.value)
+                                            }}
+                                        >
+                                            <Check
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                location.value === field.value
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                            )}
+                                            />
+                                            {location.label}
+                                        </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                        </Popover>
+                        <FormDescription>Used for weather reports and time zone adjustments.</FormDescription>
+                        <FormMessage />
+                    </FormItem>
                 )}
             />
         </div>
