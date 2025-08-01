@@ -168,11 +168,7 @@ const scheduleMeetingPrompt = ai.definePrompt({
   This is the recent conversation history. Use it to understand context from previous turns:
   {{#if history}}
   {{#each history}}
-  {{#if (eq role 'user')}}
-  User: {{content}}
-  {{else}}
-  AI: {{content}}
-  {{/if}}
+  {{role}}: {{content}}
   {{/each}}
   {{/if}}
   
