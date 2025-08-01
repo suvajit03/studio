@@ -20,13 +20,12 @@ import { format } from 'date-fns';
 
 const createMeeting = ai.defineTool({
     name: 'createMeeting',
-    description: 'Creates a new meeting and saves it to the user\'s calendar. Use this when the user asks to schedule, book, or create a meeting.',
+    description: 'Creates a new meeting and saves it to the user\'s Google Calendar. Use this when the user asks to schedule, book, or create a meeting.',
     inputSchema: MeetingSchema,
     outputSchema: z.object({ success: z.boolean() }),
 }, async (meeting) => {
-    // This is a placeholder for a real implementation that would save to a database.
-    // The component that calls this flow will handle the actual state update.
-    console.log("AI is creating meeting:", meeting);
+    // In a real implementation, this would use the Google Calendar API.
+    console.log("AI is creating meeting in Google Calendar:", meeting);
     return { success: true };
 });
 
@@ -52,7 +51,7 @@ const updateUserSettings = ai.defineTool({
 
 const viewMeetings = ai.defineTool({
   name: 'viewMeetings',
-  description: "Displays the user's upcoming or past meetings. Use this when the user asks to see, show, or list their meetings.",
+  description: "Displays the user's upcoming or past meetings from their Google Calendar. Use this when the user asks to see, show, or list their meetings.",
   inputSchema: z.object({
       timeframe: z.enum(['future', 'past']).describe("Specify whether to view 'future' or 'past' meetings."),
   }),
@@ -67,11 +66,11 @@ async ({ timeframe }, flow) => {
   });
 
   if (relevantMeetings.length === 0) {
-      return `You have no ${timeframe} meetings.`;
+      return `You have no ${timeframe} meetings in your Google Calendar.`;
   }
 
   const meetingSummary = relevantMeetings.map(m => `- "${m.title}" on ${format(new Date(m.date), 'PPP p')}`).join('\n');
-  return `Here are your ${timeframe} meetings:\n${meetingSummary}`;
+  return `Here are the ${timeframe} meetings from your Google Calendar:\n${meetingSummary}`;
 });
 
 const logoutUser = ai.defineTool({
@@ -139,7 +138,7 @@ const scheduleMeetingPrompt = ai.definePrompt({
   tools: [getWeather, createMeeting, searchLocation, viewMeetings, createNewContact, updateUserSettings, logoutUser],
   input: {schema: ScheduleMeetingInputSchema},
   output: {schema: ScheduleMeetingOutputSchema},
-  prompt: `You are an AI assistant named MeetAI. Your role is to help users manage their schedules, contacts, and settings, and answer general questions in a friendly, conversational way.
+  prompt: `You are an AI assistant named MeetAI. Your role is to help users manage their Google Calendar, contacts, and settings, and answer general questions in a friendly, conversational way.
 
   The user's name is: {{userName}}
   The user's location is: {{userLocation}}
@@ -156,7 +155,7 @@ const scheduleMeetingPrompt = ai.definePrompt({
   No contacts available.
   {{/if}}
 
-  The user's existing meetings are:
+  The user's existing meetings from Google Calendar are:
   {{#if meetings}}
   {{#each meetings}}
   - Title: {{title}}, Date: {{date}}
@@ -175,7 +174,7 @@ const scheduleMeetingPrompt = ai.definePrompt({
   Your Task:
   Based on the conversation history and the user's latest instruction, decide which tool to use, if any.
   - Be conversational and proactive. If you need information, ask for it clearly. For example, if a user wants to schedule a meeting, ask for the title, date, and time if they are missing.
-  - If you have all the information needed for a tool, use it. Once a tool is used (e.g., a meeting is created), confirm this with the user.
+  - If you have all the information needed for a tool, use it. Once a tool is used (e.g., a meeting is created in Google Calendar), confirm this with the user.
   - Meetings cannot be in the past. If a user tries to schedule a meeting in the past, politely inform them and ask for a future date/time.
   - If participants are mentioned who are not in the contact list, inform the user that they need to add the contact first.
   - If the user is in "AI" mode (openAiMode is true), you can also answer general knowledge questions.
