@@ -23,7 +23,7 @@ const getInitialMessage = (mode: ChatMode): ChatMessage => ({
         ? "Hi! I'm MeetAI. I can help you with:"
         : "Hello! I'm MeetAI. How can I help you today?",
     actions: mode === 'chatbot' ? [
-        { label: 'Schedule a meeting', value: 'Schedule a meeting for tomorrow at 10am with John Doe' },
+        { label: 'Schedule a meeting', value: 'Schedule a meeting' },
         { label: 'Check weather report', value: 'What\'s the weather like today?' },
         { label: 'View future meetings', value: 'Show me my upcoming meetings' },
         { label: 'Add a new contact', value: 'Add a new contact' },
