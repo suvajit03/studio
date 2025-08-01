@@ -125,11 +125,10 @@ export default function WeatherReport() {
                 </CardDescription>
             </div>
             {user.isLoggedIn && user.location &&
-                <Button asChild variant="outline" size="sm" className="shrink-0">
+                <Button asChild variant="outline" size="sm" className="shrink-0 text-[10px] sm:text-sm p-2 sm:p-3">
                     <Link href="/forecast">
-                        <span className="hidden sm:inline">5-Day Forecast</span>
-                        <span className="sm:hidden">Forecast</span>
-                        <ArrowRight className="ml-2 h-4 w-4"/>
+                        <span>5-Day Forecast</span>
+                        <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4"/>
                     </Link>
                 </Button>
             }
@@ -162,6 +161,7 @@ export default function WeatherReport() {
                             <CarouselItem key={index} className="basis-1/4 sm:basis-1/5 md:basis-1/6">
                                 <div className="flex flex-col items-center justify-center gap-2 p-2 rounded-lg bg-muted/50 h-full">
                                     <p className="text-xs text-muted-foreground">{hour.time}</p>
+
                                     {hour.icon}
                                     <p className="font-bold text-lg">{hour.temp}</p>
                                 </div>
