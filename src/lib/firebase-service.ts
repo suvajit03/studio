@@ -40,7 +40,8 @@ export function onContactsUpdate(callback: (contacts: Contact[]) => void): () =>
 
 export async function addMeeting(meeting: Omit<Meeting, 'id'>) {
     const newMeeting = { ...meeting, id: crypto.randomUUID() };
-    meetings = [...meetings, newMeeting];
+    meetings.push(newMeeting);
+    meetings.sort((a,b) => a.date.getTime() - b.date.getTime());
     notifyMeetingsListeners();
     return newMeeting;
 }

@@ -2,16 +2,22 @@
 import { useUser } from '@/components/providers/user-provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { format } from 'date-fns';
+import { format, isFuture } from 'date-fns';
 import { Calendar, Users, Trash } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '../ui/dialog';
+import { useMemo } from 'react';
 
 export default function UpcomingMeetings() {
     const { user, deleteMeeting } = useUser();
-    const futureMeetings = user.meetings.filter(m => m.date >= new Date());
     const isMobile = useIsMobile();
+    
+    const futureMeetings = useMemo(() => {
+        return user.meetings
+            .filter(m => isFuture(m.date))
+            .sort((a,b) => a.date.getTime() - b.date.getTime())
+    }, [user.meetings]);
 
     const getParticipantDetails = (participantIds: string[]) => {
         return participantIds.map(id => user.contacts.find(c => c.id === id)).filter(Boolean);

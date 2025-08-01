@@ -29,7 +29,7 @@ export default function Chatbot() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState<string | null>(null);
-  const { user } = useUser();
+  const { user, addMeeting } = useUser();
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -64,10 +64,13 @@ export default function Chatbot() {
     }
   }
 
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    if (!user.isLoggedIn) {
+        toast({ title: 'Please Login', description: 'You need to be logged in to chat with the assistant.', variant: 'destructive' });
+        return;
+    }
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -79,7 +82,7 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      let response: string;
+      let response: any;
       if (mode === 'schedule') {
         const result = await scheduleMeeting({
           instruction: input,
@@ -89,8 +92,16 @@ export default function Chatbot() {
           workTime: `${user.workTime.start}-${user.workTime.end}`,
           offDays: user.offDays.map(d => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d]).join(','),
         });
-        response = result.meetingDetails;
-        if (result.inviteSent) {
+        
+        // The AI Tool will have the side-effect of creating the meeting
+        // We need to reflect that change in our local state.
+        const createdMeeting = result.toolRequests.find(req => req.tool?.name === 'createMeeting')?.input;
+        if (createdMeeting) {
+            addMeeting(createdMeeting);
+        }
+
+        response = result.output?.meetingDetails;
+        if (result.output?.inviteSent) {
           toast({ title: 'Meeting Scheduled!', description: 'Invite has been sent.' });
         }
       } else if (mode === 'question') {
@@ -107,7 +118,7 @@ export default function Chatbot() {
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: response,
+        content: response || "I'm sorry, I couldn't process that. Please try again.",
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
@@ -212,14 +223,14 @@ export default function Chatbot() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything..."
-              disabled={isLoading}
+              placeholder={user.isLoggedIn ? "Ask me anything..." : "Please log in to use the chatbot."}
+              disabled={isLoading || !user.isLoggedIn}
               className="flex-1"
             />
-            <Button type="button" variant="ghost" size="icon" disabled={isLoading}>
+            <Button type="button" variant="ghost" size="icon" disabled={isLoading || !user.isLoggedIn}>
               <Mic className="h-5 w-5" />
             </Button>
-            <Button type="submit" size="icon" disabled={isLoading}>
+            <Button type="submit" size="icon" disabled={isLoading || !user.isLoggedIn}>
               <Send className="h-5 w-5" />
             </Button>
           </form>
