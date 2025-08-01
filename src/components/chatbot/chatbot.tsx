@@ -100,7 +100,7 @@ export default function Chatbot() {
   };
 
   return (
-    <Card className="w-full max-w-3xl mx-auto h-[calc(100vh-10rem)] flex flex-col">
+    <Card className="w-full max-w-3xl mx-auto h-full flex flex-col">
       <CardHeader className="flex flex-row items-center gap-3">
         <Bot className="h-8 w-8 text-primary" />
         <div>
@@ -128,7 +128,7 @@ export default function Chatbot() {
           </div>
         </div>
         <ScrollArea className="flex-1 px-6" ref={scrollAreaRef as any}>
-          <div className="space-y-4">
+          <div className="space-y-4 py-4">
             {messages.map((message) => (
               <div
                 key={message.id}

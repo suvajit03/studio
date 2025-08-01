@@ -12,8 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bot, Menu, X, Bell } from 'lucide-react';
-import MyCalendar from '@/components/dashboard/my-calendar';
-import WeatherReport from '@/components/dashboard/weather-report';
 import UpcomingMeetings from '@/components/dashboard/upcoming-meetings';
 import AuthButton from '@/components/auth/auth-button';
 import Chatbot from '@/components/chatbot/chatbot';
@@ -134,7 +132,7 @@ export function MainLayout() {
             </div>
           </header>
 
-          <main className="container py-8">
+          <main className="container h-[calc(100vh-4rem)] py-4">
             <Chatbot />
           </main>
         </SidebarInset>
