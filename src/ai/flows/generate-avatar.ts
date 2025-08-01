@@ -9,17 +9,8 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { GenerateAvatarInputSchema, GenerateAvatarOutputSchema, type GenerateAvatarInput, type GenerateAvatarOutput } from '@/lib/types';
 
-export const GenerateAvatarInputSchema = z.object({
-  description: z.string().describe('A description of the desired avatar.'),
-});
-export type GenerateAvatarInput = z.infer<typeof GenerateAvatarInputSchema>;
-
-export const GenerateAvatarOutputSchema = z.object({
-  avatarDataUri: z.string().describe('The generated avatar as a data URI.'),
-});
-export type GenerateAvatarOutput = z.infer<typeof GenerateAvatarOutputSchema>;
 
 export async function generateAvatar(input: GenerateAvatarInput): Promise<GenerateAvatarOutput> {
   return generateAvatarFlow(input);
