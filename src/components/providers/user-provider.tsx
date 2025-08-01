@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react';
 import type { UserData, Contact, Meeting } from '@/lib/types';
 import _ from 'lodash';
 
@@ -93,15 +93,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [allUsers, user, isLoaded]);
 
-  const login = (email: string, password?: string): boolean => {
+  const login = useCallback((email: string, password?: string): boolean => {
     if (allUsers[email] && allUsers[email].password === password) {
       setUser(allUsers[email]);
       return true;
     }
     return false;
-  };
+  }, [allUsers]);
 
-  const signup = (name: string, email: string, password?: string): boolean => {
+  const signup = useCallback((name: string, email: string, password?: string): boolean => {
     if (allUsers[email]) {
       return false; // User already exists
     }
@@ -121,61 +121,61 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setUser(newUser);
     setShowOnboarding(true); // Trigger onboarding for new users
     return true;
-  };
+  }, [allUsers]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(GUEST_USER);
     localStorage.removeItem(CURRENT_USER_EMAIL_KEY);
-  };
+  }, []);
 
-  const updateUser = (data: Partial<Omit<UserData, 'meetings' | 'contacts' | 'password'>>) => {
+  const updateUser = useCallback((data: Partial<Omit<UserData, 'meetings' | 'contacts' | 'password'>>) => {
     if (!user.isLoggedIn) return;
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
     setAllUsers(prev => ({ ...prev, [user.email]: updatedUser }));
-  };
+  }, [user]);
   
-  const addContact = (contactData: Omit<Contact, 'id'>) => {
+  const addContact = useCallback((contactData: Omit<Contact, 'id'>) => {
     if (!user.isLoggedIn) return;
     const newContact = {...contactData, id: crypto.randomUUID()};
     const updatedUser = { ...user, contacts: [...user.contacts, newContact] };
     setUser(updatedUser);
     setAllUsers(prev => ({ ...prev, [user.email]: updatedUser }));
-  };
+  }, [user]);
 
-  const updateContact = (updatedContact: Contact) => {
+  const updateContact = useCallback((updatedContact: Contact) => {
     if (!user.isLoggedIn) return;
     const updatedUser = { ...user, contacts: user.contacts.map(c => c.id === updatedContact.id ? updatedContact : c) };
     setUser(updatedUser);
     setAllUsers(prev => ({ ...prev, [user.email]: updatedUser }));
-  };
+  }, [user]);
 
-  const deleteContact = (contactId: string) => {
+  const deleteContact = useCallback((contactId: string) => {
     if (!user.isLoggedIn) return;
     const updatedUser = { ...user, contacts: user.contacts.filter(c => c.id !== contactId) };
     setUser(updatedUser);
     setAllUsers(prev => ({ ...prev, [user.email]: updatedUser }));
-  }
+  }, [user]);
 
-  const addMeeting = (meetingData: Omit<Meeting, 'id'|'date'> & { date: string }) => {
+  const addMeeting = useCallback((meetingData: Omit<Meeting, 'id'|'date'> & { date: string }) => {
     if (!user.isLoggedIn) return;
     const newMeeting: Meeting = { ...meetingData, id: crypto.randomUUID(), date: new Date(meetingData.date) };
     const updatedMeetings = [...user.meetings, newMeeting].sort((a,b) => a.date.getTime() - b.date.getTime());
     const updatedUser = { ...user, meetings: updatedMeetings };
     setUser(updatedUser);
     setAllUsers(prev => ({ ...prev, [user.email]: updatedUser }));
-  }
+  }, [user]);
 
-  const deleteMeeting = (meetingId: string) => {
+  const deleteMeeting = useCallback((meetingId: string) => {
     if (!user.isLoggedIn) return;
     const updatedUser = { ...user, meetings: user.meetings.filter(m => m.id !== meetingId) };
     setUser(updatedUser);
     setAllUsers(prev => ({ ...prev, [user.email]: updatedUser }));
-  }
+  }, [user]);
 
   const contextValue = useMemo(
     () => ({ user, login, logout, signup, updateUser, addContact, updateContact, deleteContact, addMeeting, deleteMeeting, showOnboarding, setShowOnboarding }),
-    [user, allUsers, showOnboarding]
+    [user, login, logout, signup, updateUser, addContact, updateContact, deleteContact, addMeeting, deleteMeeting, showOnboarding]
   );
 
   if (!isLoaded) {
