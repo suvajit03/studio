@@ -2,13 +2,15 @@
 import type { LucideIcon } from 'lucide-react';
 import { z } from 'zod';
 
-export interface Contact {
-  id: string;
-  name: string;
-  email: string;
-  number?: string;
-  description?: string;
-}
+export const ContactSchema = z.object({
+  id: z.string(),
+  name: z.string().min(2, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  number: z.string().optional(),
+  description: z.string().optional(),
+});
+export type Contact = z.infer<typeof ContactSchema>;
+
 
 export const MeetingSchema = z.object({
   title: z.string().optional().describe('The title of the meeting. Defaults to "Untitled Meeting" if not provided.'),
@@ -26,6 +28,17 @@ export interface Meeting {
   participants: string[]; // array of contact ids
   notes?: string;
 }
+
+export const UserSettingsSchema = z.object({
+  name: z.string().optional(),
+  email: z.string().email().optional(),
+  location: z.string().optional(),
+  workTimeStart: z.string().optional(),
+  workTimeEnd: z.string().optional(),
+  offDays: z.array(z.number()).optional(),
+});
+export type UserSettings = z.infer<typeof UserSettingsSchema>;
+
 
 export interface User {
   isLoggedIn: boolean;
@@ -58,16 +71,23 @@ export const ScheduleMeetingInputSchema = z.object({
       number: z.string().optional(),
       description: z.string().optional(),
   })).describe('The user\'s contact list.'),
+  meetings: z.array(z.object({
+      id: z.string(),
+      title: z.string(),
+      date: z.string(),
+      participants: z.array(z.string()),
+      notes: z.string().optional(),
+  })).describe('The user\'s existing meetings.'),
   userName: z.string(),
   userLocation: z.string(),
   workTime: z.string(),
   offDays: z.string(),
+  openAiMode: z.boolean().describe('Whether the user is in open-ended AI mode.'),
 });
 export type ScheduleMeetingInput = z.infer<typeof ScheduleMeetingInputSchema>;
 
 export const ScheduleMeetingOutputSchema = z.object({
-  meetingDetails: z.string().describe('A summary of the scheduled meeting.'),
-  inviteSent: z.boolean().describe('Indicates if the meeting invite was sent.'),
+  response: z.string().describe('A summary of the action taken or a conversational reply.'),
 });
 export type ScheduleMeetingOutput = z.infer<typeof ScheduleMeetingOutputSchema>;
 

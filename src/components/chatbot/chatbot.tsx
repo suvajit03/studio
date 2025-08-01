@@ -9,31 +9,32 @@ import { Send, Mic, Bot, User, Volume2, Loader } from 'lucide-react';
 import type { ChatMessage } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { scheduleMeeting } from '@/ai/flows/schedule-meeting';
-import { answerQuestion } from '@/ai/flows/answer-questions';
-import { modifyWebsite } from '@/ai/flows/modify-website';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Card, CardContent, CardHeader } from '../ui/card';
 
-type ChatMode = 'schedule' | 'question' | 'modify';
+type ChatMode = 'chatbot' | 'ai';
+
+const getInitialMessage = (mode: ChatMode): ChatMessage => ({
+    id: crypto.randomUUID(),
+    role: 'assistant',
+    content: mode === 'chatbot'
+        ? "Hi! I'm MeetAI. I can help you with:\n\n*   Scheduling a meeting\n*   Checking the weather report\n*   Viewing your future or past meetings\n*   Adding a new contact\n\nJust let me know what you need!"
+        : "Hello! I'm MeetAI. How can I help you today?",
+});
+
 
 export default function Chatbot() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "Hello! I'm MeetAI. How can I help you? You can ask me to schedule a meeting, answer a question, or even modify this website's description.",
-    },
-  ]);
+  const [mode, setMode] = useState<ChatMode>('chatbot');
+  const [messages, setMessages] = useState<ChatMessage[]>([getInitialMessage('chatbot')]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState<string | null>(null);
-  const { user, addMeeting } = useUser();
+  const { user, addMeeting, addContact, meetings, updateUser, logout } = useUser();
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [mode, setMode] = useState<ChatMode>('schedule');
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -63,6 +64,11 @@ export default function Chatbot() {
         setIsSynthesizing(null);
     }
   }
+  
+  const handleModeChange = (newMode: ChatMode) => {
+    setMode(newMode);
+    setMessages([getInitialMessage(newMode)]);
+  }
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,8 +88,6 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      let response: any;
-      if (mode === 'schedule') {
         const result = await scheduleMeeting({
           instruction: input,
           contacts: user.contacts,
@@ -91,36 +95,37 @@ export default function Chatbot() {
           userLocation: user.location,
           workTime: `${user.workTime.start}-${user.workTime.end}`,
           offDays: user.offDays.map(d => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d]).join(','),
+          meetings: user.meetings.map(m => ({ ...m, date: m.date.toISOString() })),
+          openAiMode: mode === 'ai',
         });
         
-        // The AI Tool will have the side-effect of creating the meeting
-        // We need to reflect that change in our local state.
-        const createdMeeting = result.toolRequests.find(req => req.tool?.name === 'createMeeting')?.input;
-        if (createdMeeting) {
-            addMeeting(createdMeeting);
-        }
-
-        response = result.output?.meetingDetails;
-        if (result.output?.inviteSent) {
-          toast({ title: 'Meeting Scheduled!', description: 'Invite has been sent.' });
-        }
-      } else if (mode === 'question') {
-        const result = await answerQuestion({ query: input });
-        response = result.answer;
-      } else {
-        const result = await modifyWebsite({
-          websiteDescription: 'A meeting scheduler app',
-          desiredChanges: input,
+        // Handle tool side effects
+        result.toolRequests.forEach(req => {
+            if (req.tool?.name === 'createMeeting' && req.input) {
+                addMeeting(req.input);
+                toast({ title: 'Meeting Scheduled!', description: 'The meeting has been added to your calendar.' });
+            }
+             if (req.tool?.name === 'createNewContact' && req.input) {
+                addContact(req.input);
+                toast({ title: 'Contact Added!', description: `${req.input.name} has been added to your contacts.` });
+            }
+            if (req.tool?.name === 'updateUserSettings' && req.input) {
+                updateUser(req.input);
+                 toast({ title: 'Settings Updated!', description: 'Your account settings have been updated.' });
+            }
+            if (req.tool?.name === 'logoutUser') {
+                logout();
+                toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+            }
         });
-        response = "Okay, I've updated the website description to: " + result.modifiedWebsite;
-      }
 
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: response || "I'm sorry, I couldn't process that. Please try again.",
+        content: result.output?.response || "I'm sorry, I couldn't process that. Please try again.",
       };
       setMessages((prev) => [...prev, assistantMessage]);
+
     } catch (error) {
       console.error('AI Error:', error);
       const errorMessage: ChatMessage = {
@@ -152,14 +157,11 @@ export default function Chatbot() {
         <div className="p-2 border-b px-6">
           <p className="text-xs text-muted-foreground mb-2 px-1">Select AI Mode:</p>
           <div className="flex gap-2">
-            <Button size="sm" variant={mode === 'schedule' ? 'default' : 'outline'} onClick={() => setMode('schedule')}>
-              Schedule
+            <Button size="sm" variant={mode === 'chatbot' ? 'default' : 'outline'} onClick={() => handleModeChange('chatbot')}>
+              Chatbot
             </Button>
-            <Button size="sm" variant={mode === 'question' ? 'default' : 'outline'} onClick={() => setMode('question')}>
-              Q&A
-            </Button>
-            <Button size="sm" variant={mode === 'modify' ? 'default' : 'outline'} onClick={() => setMode('modify')}>
-              Modify Site
+            <Button size="sm" variant={mode === 'ai' ? 'default' : 'outline'} onClick={() => handleModeChange('ai')}>
+              AI
             </Button>
           </div>
         </div>
@@ -179,7 +181,7 @@ export default function Chatbot() {
                 )}
                 <div
                   className={cn(
-                    'max-w-[80%] rounded-lg px-3 py-2 text-sm relative group',
+                    'max-w-[80%] rounded-lg px-3 py-2 text-sm relative group whitespace-pre-wrap',
                     message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
                   )}
                 >

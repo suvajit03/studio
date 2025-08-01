@@ -2,45 +2,94 @@
 'use server';
 
 /**
- * @fileOverview AI-powered meeting scheduler flow.
+ * @fileOverview AI-powered meeting scheduler and assistant flow.
  *
- * This file defines a Genkit flow that allows users to schedule meetings
- * via natural language instructions provided to an AI chatbot.
+ * This file defines a Genkit flow that allows users to interact with the application
+ * via natural language instructions provided to an AI chatbot. It can schedule meetings,
+ * check weather, manage contacts, view meetings, update settings, and answer general questions.
  *
- * - scheduleMeeting - The main function to schedule meetings.
+ * - scheduleMeeting - The main function for the AI assistant.
  * - ScheduleMeetingInput - Input type for the scheduleMeeting function.
  * - ScheduleMeetingOutput - Output type for the scheduleMeeting function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { ScheduleMeetingInputSchema, ScheduleMeetingOutputSchema, MeetingSchema, type ScheduleMeetingInput, type ScheduleMeetingOutput } from '@/lib/types';
-
+import { ScheduleMeetingInputSchema, ScheduleMeetingOutputSchema, MeetingSchema, type ScheduleMeetingInput, type ScheduleMeetingOutput, ContactSchema, UserSettingsSchema } from '@/lib/types';
+import { format } from 'date-fns';
 
 export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<ScheduleMeetingOutput> {
   
   const createMeeting = ai.defineTool({
       name: 'createMeeting',
-      description: 'Creates a new meeting and saves it to the user\'s calendar.',
+      description: 'Creates a new meeting and saves it to the user\'s calendar. Use this when the user asks to schedule, book, or create a meeting.',
       inputSchema: MeetingSchema,
       outputSchema: z.object({ success: z.boolean() }),
   }, async (meeting) => {
-      try {
-          // This is a placeholder for a real implementation that would save to a database.
-          console.log("AI is creating meeting:", meeting);
-          // In a real app this would be integrated with the UserProvider, but since flows
-          // are server-side, we can't directly call client-side hooks.
-          // This tool call is what the user-provider will listen for to update its state.
-          return { success: true };
-      } catch(e) {
-          console.error(e)
-          return { success: false }
-      }
+      // This is a placeholder for a real implementation that would save to a database.
+      // The component that calls this flow will handle the actual state update.
+      console.log("AI is creating meeting:", meeting);
+      return { success: true };
+  });
+
+  const createNewContact = ai.defineTool({
+    name: 'createNewContact',
+    description: "Adds a new contact to the user's contact list. Use this when the user wants to add or create a new contact.",
+    inputSchema: ContactSchema.omit({ id: true }),
+    outputSchema: z.object({ success: z.boolean() }),
+  }, async (contact) => {
+    console.log("AI is creating contact:", contact);
+    return { success: true };
+  });
+
+  const updateUserSettings = ai.defineTool({
+    name: 'updateUserSettings',
+    description: "Updates the user's account settings, such as name, location, or work schedule. Use this when the user wants to modify, change, or update their settings.",
+    inputSchema: UserSettingsSchema,
+    outputSchema: z.object({ success: z.boolean() }),
+  }, async (settings) => {
+    console.log("AI is updating settings:", settings);
+    return { success: true };
+  });
+
+  const viewMeetings = ai.defineTool({
+    name: 'viewMeetings',
+    description: "Displays the user's upcoming or past meetings. Use this when the user asks to see, show, or list their meetings.",
+    inputSchema: z.object({
+        timeframe: z.enum(['future', 'past']).describe("Specify whether to view 'future' or 'past' meetings."),
+    }),
+    outputSchema: z.string().describe('A formatted summary of the meetings.'),
+  },
+  async ({ timeframe }, flow) => {
+    const allMeetings = flow.state.meetings || [];
+    const now = new Date();
+    const relevantMeetings = allMeetings.filter(m => {
+        const meetingDate = new Date(m.date);
+        return timeframe === 'future' ? meetingDate >= now : meetingDate < now;
+    });
+
+    if (relevantMeetings.length === 0) {
+        return `You have no ${timeframe} meetings.`;
+    }
+
+    const meetingSummary = relevantMeetings.map(m => `- "${m.title}" on ${format(new Date(m.date), 'PPP p')}`).join('\\n');
+    return `Here are your ${timeframe} meetings:\\n${meetingSummary}`;
+  });
+
+  const logoutUser = ai.defineTool({
+      name: 'logoutUser',
+      description: 'Logs the current user out of the application. Use this when the user asks to log out or sign out.',
+      inputSchema: z.object({}),
+      outputSchema: z.object({ success: z.boolean() }),
+  }, async () => {
+    console.log("AI is logging out user.");
+    return { success: true };
   })
+
 
   const getWeather = ai.defineTool({
     name: 'getWeather',
-    description: 'Retrieves the current weather conditions for a given location.',
+    description: 'Retrieves the current weather conditions or a forecast for a given location. Use this when the user asks about the weather.',
     inputSchema: z.object({
       location: z.string().describe('The location to retrieve weather information for.'),
     }),
@@ -58,12 +107,11 @@ export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<Sche
       console.error(e);
       return `Sorry, I couldn't get the weather for ${input.location}.`;
     }
-  }
-  );
+  });
 
   const searchLocation = ai.defineTool({
     name: 'searchLocation',
-    description: 'Searches for a location, like a coffee shop or restaurant.',
+    description: 'Searches for a location, like a coffee shop or restaurant. Use this to help find a venue for a meeting.',
     inputSchema: z.object({
       query: z.string().describe('The search query, e.g., "coffee shop" or "pizza".'),
       location: z.string().describe('The area to search in, e.g., "Mountain View, CA".'),
@@ -88,28 +136,12 @@ export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<Sche
     }
   });
 
-
-  const sendInvite = ai.defineTool({
-    name: 'sendInvite',
-    description: 'Sends a meeting invite to the specified email addresses.',
-    inputSchema: z.object({
-      recipientEmails: z.array(z.string().email()).describe('List of recipient email addresses.'),
-      meetingDetails: z.string().describe('Details of the meeting to be included in the invite.'),
-    }),
-    outputSchema: z.boolean().describe('Indicates if the meeting invite was successfully sent.'),
-  },
-  async (input) => {
-    console.log(`Sending invite to ${input.recipientEmails.join(', ')} with details: ${input.meetingDetails}`);
-    return true;
-  }
-  );
-
   const scheduleMeetingPrompt = ai.definePrompt({
     name: 'scheduleMeetingPrompt',
-    tools: [getWeather, sendInvite, createMeeting, searchLocation],
+    tools: [getWeather, createMeeting, searchLocation, viewMeetings, createNewContact, updateUserSettings, logoutUser],
     input: {schema: ScheduleMeetingInputSchema},
     output: {schema: ScheduleMeetingOutputSchema},
-    prompt: `You are an AI assistant that schedules meetings for users. Your name is MeetAI.
+    prompt: `You are an AI assistant named MeetAI. Your role is to help users manage their schedules, contacts, and settings, and answer general questions.
 
     The user's name is: {{userName}}
     The user's location is: {{userLocation}}
@@ -126,19 +158,21 @@ export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<Sche
     No contacts available.
     {{/if}}
 
-    Instructions: {{{instruction}}}
+    The user's existing meetings are:
+    {{#if meetings}}
+    {{#each meetings}}
+    - Title: {{title}}, Date: {{date}}
+    {{/each}}
+    {{else}}
+    No meetings scheduled.
+    {{/if}}
+    
+    User's Instruction: {{{instruction}}}
 
-    Follow these steps to schedule a meeting:
-    1.  **Extract Details**: Determine the meeting's title, date, time, and participants from the user's instruction. If the title is not provided, you may leave it undefined. If participants are not specified, you may also leave that field empty. A date and time are always required.
-    2.  **Validate Time**: Use the user's information (work time, off days, current time) to validate the proposed meeting time. The meeting cannot be in the past or on an off day.
-    3.  **Identify Participants**: If participants are requested, match them with the contact list. If a participant's name is mentioned but is not in the list, you must inform the user that you cannot schedule the meeting because the contact does not exist. Do not proceed.
-    4.  **Find Location (if needed)**: If the user asks to find a location (e.g., "a coffee shop"), use the \`searchLocation\` tool.
-    5.  **Check Weather (if needed)**: If the instruction involves checking the weather, use the \`getWeather\` tool. If the weather is bad (e.g., rain, snow), you can suggest rescheduling but proceed if the user insists.
-    6.  **Create Meeting**: Once you have confirmed all details (a valid date/time and existing participants if any were provided), you **MUST** call the \`createMeeting\` tool to save the meeting to the calendar. Use "Untitled Meeting" if no title was provided.
-    7.  **Send Invites (if needed)**: After successfully creating the meeting, if participant emails are available, use the \`sendInvite\` tool to send the invites.
-    8.  **Final Summary**: Return a summary of the scheduled meeting details and confirm whether the invite was sent.
-
-    Output should be in JSON format.
+    Based on the user's instruction, decide which tool to use, if any.
+    - For scheduling, always confirm the date and time. Meetings cannot be in the past. If participants are mentioned who are not in the contact list, inform the user.
+    - If the user is in "AI" mode (openAiMode is true), you can also answer general knowledge questions conversationally. If the user is not in "AI" mode, stick to the available tools.
+    - If you use a tool, provide a friendly confirmation message about the action you've taken in the 'response' field. If no tool is required, just provide a conversational response.
     `,
   });
 
