@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -28,6 +29,8 @@ body {
     --input: 214.3 31.8% 91.4%;
     --ring: 197 71% 63%;
     --radius: 0.5rem;
+    --chart-1: 197 71% 73%;
+    --chart-2: 282 26% 80%;
   }
  
   .dark {
@@ -50,6 +53,8 @@ body {
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 197 71% 63%;
+    --chart-1: 197 71% 50%;
+    --chart-2: 282 26% 60%;
   }
 }
 

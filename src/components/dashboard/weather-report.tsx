@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser } from '@/components/providers/user-provider';
@@ -10,30 +11,8 @@ import { format } from 'date-fns';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 import Link from 'next/link';
 import { Button } from '../ui/button';
-
-interface ForecastInfo {
-    time: string;
-    temp: string;
-    condition: string;
-    icon: JSX.Element;
-}
-
-interface WeatherInfo {
-    temp: string;
-    condition: string;
-    icon: JSX.Element;
-    wind: string;
-    humidity: string;
-    feelsLike: string;
-    tempMin: string;
-    tempMax: string;
-    pressure: string;
-    visibility: string;
-    cloudiness: string;
-    sunrise: string;
-    sunset: string;
-    forecast: ForecastInfo[];
-}
+import type { WeatherInfo, WeatherMetric, ForecastInfo } from '@/lib/types';
+import WeatherDetailDialog from './weather-detail-dialog';
 
 const getWeatherIcon = (condition: string, size: number = 4) => {
     const s = `h-${size} w-${size}`;
@@ -45,10 +24,21 @@ const getWeatherIcon = (condition: string, size: number = 4) => {
     return <Sun className={`${s} text-yellow-400`} />;
 }
 
+const weatherMetrics: WeatherMetric[] = [
+    { name: 'Wind', key: 'maxwind_kph', unit: ' km/h', icon: Wind, precision: 0 },
+    { name: 'Humidity', key: 'avghumidity', unit: '%', icon: Thermometer, precision: 0 },
+    { name: 'Feels Like', key: 'feelslike_c', unit: '°C', icon: Thermometer, precision: 0 },
+    { name: 'Pressure', key: 'pressure_mb', unit: ' hPa', icon: Gauge, precision: 0 },
+    { name: 'Visibility', key: 'vis_km', unit: ' km', icon: Eye, precision: 0 },
+    { name: 'Cloudiness', key: 'cloud', unit: '%', icon: CloudinessIcon, precision: 0 },
+];
+
 export default function WeatherReport() {
   const { user } = useUser();
   const [weather, setWeather] = useState<WeatherInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDetailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState<WeatherMetric | null>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -94,6 +84,9 @@ export default function WeatherReport() {
                 sunrise: forecastData.astro.sunrise,
                 sunset: forecastData.astro.sunset,
                 forecast: hourlyForecasts,
+                // Add full day data for metric lookup
+                day: forecastData.day,
+                current: currentData
             });
 
         } catch (error) {
@@ -111,9 +104,24 @@ export default function WeatherReport() {
         setWeather(null);
     }
   }, [user.location, user.isLoggedIn]);
+  
+  const handleMetricClick = (metric: WeatherMetric) => {
+    setSelectedMetric(metric);
+    setDetailDialogOpen(true);
+  }
 
+  const getMetricValue = (metricKey: keyof WeatherInfo['day'] | keyof WeatherInfo['current'], precision: number) => {
+    if (!weather) return 'N/A';
+    // Prioritize current data for some fields, day average for others
+    const value = weather.current[metricKey as keyof WeatherInfo['current']] ?? weather.day[metricKey as keyof WeatherInfo['day']];
+    if(typeof value === 'number') {
+        return value.toFixed(precision);
+    }
+    return 'N/A';
+  }
 
   return (
+    <>
     <Card className={isMobile ? "border-0 shadow-none" : ""}>
       <CardHeader>
         <div className="flex justify-between items-start gap-2">
@@ -157,10 +165,9 @@ export default function WeatherReport() {
                     <Carousel opts={{ align: "start" }} className="w-full">
                         <CarouselContent>
                             {weather.forecast.map((hour, index) => (
-                            <CarouselItem key={index} className="basis-1/3 sm:basis-1/4 md:basis-1/5">
+                            <CarouselItem key={index} className="basis-1/3 sm:basis-1/4 md:basis-1/5 lg:basis-[12.5%]">
                                 <div className="flex flex-col items-center justify-center gap-2 p-2 rounded-lg bg-muted/50 h-full">
                                     <p className="text-xs text-muted-foreground">{hour.time}</p>
-
                                     {hour.icon}
                                     <p className="font-bold text-lg">{hour.temp}</p>
                                 </div>
@@ -173,20 +180,15 @@ export default function WeatherReport() {
                 </Card>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                        <Wind className="h-5 w-5 text-primary" />
-                        <div>
-                            <p className="text-muted-foreground">Wind</p>
-                            <p className="font-semibold">{weather.wind}</p>
-                        </div>
-                    </div>
-                     <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                        <Thermometer className="h-5 w-5 text-primary" />
-                        <div>
-                            <p className="text-muted-foreground">Humidity</p>
-                            <p className="font-semibold">{weather.humidity}</p>
-                        </div>
-                    </div>
+                   {weatherMetrics.slice(0, 2).map((metric) => (
+                       <Card key={metric.name} className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors" onClick={() => handleMetricClick(metric)}>
+                            <metric.icon className="h-5 w-5 text-primary" />
+                            <div>
+                                <p className="text-muted-foreground">{metric.name}</p>
+                                <p className="font-semibold">{getMetricValue(metric.key, metric.precision)}{metric.unit}</p>
+                            </div>
+                        </Card>
+                   ))}
                 </div>
 
                 <Accordion type="single" collapsible className="w-full">
@@ -194,41 +196,15 @@ export default function WeatherReport() {
                         <AccordionTrigger>More Details</AccordionTrigger>
                         <AccordionContent>
                            <div className="grid grid-cols-2 gap-4 text-sm pt-2">
-                                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                                    <Thermometer className="h-5 w-5 text-primary" />
+                               {weatherMetrics.slice(2).map((metric) => (
+                                <Card key={metric.name} className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors" onClick={() => handleMetricClick(metric)}>
+                                    <metric.icon className="h-5 w-5 text-primary" />
                                     <div>
-                                        <p className="text-muted-foreground">Feels Like</p>
-                                        <p className="font-semibold">{weather.feelsLike}</p>
+                                        <p className="text-muted-foreground">{metric.name}</p>
+                                        <p className="font-semibold">{getMetricValue(metric.key, metric.precision)}{metric.unit}</p>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                                    <Thermometer className="h-5 w-5 text-primary" />
-                                    <div>
-                                        <p className="text-muted-foreground">Max / Min</p>
-                                        <p className="font-semibold">{weather.tempMax} / {weather.tempMin}</p>
-                                    </div>
-                                </div>
-                                 <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                                    <Gauge className="h-5 w-5 text-primary" />
-                                    <div>
-                                        <p className="text-muted-foreground">Pressure</p>
-                                        <p className="font-semibold">{weather.pressure}</p>
-                                    </div>
-                                </div>
-                                 <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                                    <Eye className="h-5 w-5 text-primary" />
-                                    <div>
-                                        <p className="text-muted-foreground">Visibility</p>
-                                        <p className="font-semibold">{weather.visibility}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                                    <CloudinessIcon className="h-5 w-5 text-primary" />
-                                    <div>
-                                        <p className="text-muted-foreground">Cloudiness</p>
-                                        <p className="font-semibold">{weather.cloudiness}</p>
-                                    </div>
-                                </div>
+                                </Card>
+                               ))}
                                 <div className="flex flex-col justify-center gap-2 p-3 rounded-lg bg-muted/50">
                                     <div className="flex items-center gap-2">
                                         <Sunrise className="h-5 w-5 text-yellow-500" />
@@ -247,5 +223,13 @@ export default function WeatherReport() {
         )}
       </CardContent>
     </Card>
+    <WeatherDetailDialog 
+        open={isDetailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        metric={selectedMetric}
+        location={user.location}
+    />
+    </>
   );
 }
+

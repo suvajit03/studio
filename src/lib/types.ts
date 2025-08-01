@@ -1,3 +1,5 @@
+
+import type { LucideIcon } from 'lucide-react';
 import { z } from 'zod';
 
 export interface Contact {
@@ -89,3 +91,49 @@ export const TextToSpeechOutputSchema = z.object({
   audioDataUri: z.string().describe('The synthesized audio as a WAV data URI.'),
 });
 export type TextToSpeechOutput = z.infer<typeof TextToSpeechOutputSchema>;
+
+
+export interface ForecastInfo {
+    time: string;
+    temp: string;
+    condition: string;
+    icon: JSX.Element;
+}
+
+export interface WeatherInfo {
+    temp: string;
+    condition: string;
+    icon: JSX.Element;
+    wind: string;
+    humidity: string;
+    feelsLike: string;
+    tempMin: string;
+    tempMax: string;
+    pressure: string;
+    visibility: string;
+    cloudiness: string;
+    sunrise: string;
+    sunset: string;
+    forecast: ForecastInfo[];
+    day: any; // WeatherAPI forecastday.day object
+    current: any; // WeatherAPI current object
+}
+
+export interface WeatherMetric {
+    name: string;
+    key: keyof WeatherInfo['day'] | keyof WeatherInfo['current'];
+    unit: string;
+    icon: LucideIcon;
+    precision: number;
+}
+
+interface WeatherDataBase {
+    date: string; // "YYYY-MM-DD"
+    value: number;
+}
+export interface HistoricalData extends WeatherDataBase {
+    type: 'history';
+}
+export interface ForecastData extends WeatherDataBase {
+    type: 'forecast';
+}
