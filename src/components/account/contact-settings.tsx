@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import type { Contact } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import StorageInspector from '../debug/storage-inspector';
+import UserContextInspector from '../debug/user-context-inspector';
 
 const contactSchema = z.object({
     name: z.string().min(2, "Name is required"),
@@ -360,6 +362,9 @@ export default function ContactSettings() {
                     </Form>
                 </DialogContent>
             </Dialog>
+            
+            <UserContextInspector />
+            <StorageInspector />
         </div>
     );
 }

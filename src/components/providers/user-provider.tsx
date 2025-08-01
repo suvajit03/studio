@@ -93,30 +93,43 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // Save all users to local storage whenever it changes
   useEffect(() => {
-    if (isLoaded && Object.keys(allUsers).length > 0) {
-        console.log('💾 Saving user data to localStorage');
-        try {
-            // Create a deep copy for serialization to avoid modifying the state directly
-            const serializableUsers = _.cloneDeep(allUsers);
-            for (const email in serializableUsers) {
-                if (serializableUsers[email].meetings) {
-                    serializableUsers[email].meetings = serializableUsers[email].meetings.map((m: any) => ({
-                        ...m, 
-                        date: m.date.toISOString()
-                    }));
+    if (isLoaded) {
+        console.log('💾 Save effect triggered, allUsers keys:', Object.keys(allUsers).length);
+        console.log('💾 User logged in:', user.isLoggedIn);
+        console.log('💾 Current allUsers:', allUsers);
+        
+        if (Object.keys(allUsers).length > 0) {
+            console.log('💾 Saving user data to localStorage');
+            try {
+                // Create a deep copy for serialization to avoid modifying the state directly
+                const serializableUsers = _.cloneDeep(allUsers);
+                for (const email in serializableUsers) {
+                    if (serializableUsers[email].meetings) {
+                        serializableUsers[email].meetings = serializableUsers[email].meetings.map((m: any) => ({
+                            ...m, 
+                            date: m.date.toISOString()
+                        }));
+                    }
                 }
-            }
-            localStorage.setItem(ALL_USERS_KEY, JSON.stringify(serializableUsers));
-            console.log('✅ User data saved successfully');
+                localStorage.setItem(ALL_USERS_KEY, JSON.stringify(serializableUsers));
+                console.log('✅ User data saved successfully to localStorage');
+                console.log('✅ Saved data:', serializableUsers);
 
-            if (user.isLoggedIn) {
-                localStorage.setItem(CURRENT_USER_EMAIL_KEY, user.email);
-            } else {
-                localStorage.removeItem(CURRENT_USER_EMAIL_KEY);
+                if (user.isLoggedIn) {
+                    localStorage.setItem(CURRENT_USER_EMAIL_KEY, user.email);
+                    console.log('✅ Current user email saved:', user.email);
+                } else {
+                    localStorage.removeItem(CURRENT_USER_EMAIL_KEY);
+                    console.log('✅ Current user email removed');
+                }
+            } catch(e) {
+                console.error("❌ Failed to save user data to local storage", e);
             }
-        } catch(e) {
-            console.error("❌ Failed to save user data to local storage", e);
+        } else {
+            console.log('💾 No users to save (allUsers is empty)');
         }
+    } else {
+        console.log('💾 Not loaded yet, skipping save');
     }
   }, [allUsers, user, isLoaded]);
 
@@ -203,8 +216,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     console.log('👤 Updated user contacts after:', updatedContacts.length);
     
     // Update both user state and allUsers
+    console.log('🔄 Setting user state...');
     setUser(updatedUser);
-    setAllUsers(prev => ({ ...prev, [user.email]: updatedUser }));
+    console.log('🔄 Setting allUsers state...');
+    setAllUsers(prev => {
+      const newAllUsers = { ...prev, [user.email]: updatedUser };
+      console.log('🔄 Updated allUsers:', newAllUsers);
+      return newAllUsers;
+    });
     
     console.log('✅ Contact added successfully');
     
@@ -270,8 +289,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     console.log('📅 Updated user meetings after:', updatedMeetings.length);
     
     // Update both user state and allUsers
+    console.log('🔄 Setting user state...');
     setUser(updatedUser);
-    setAllUsers(prev => ({ ...prev, [user.email]: updatedUser }));
+    console.log('🔄 Setting allUsers state...');
+    setAllUsers(prev => {
+      const newAllUsers = { ...prev, [user.email]: updatedUser };
+      console.log('🔄 Updated allUsers:', newAllUsers);
+      return newAllUsers;
+    });
     
     console.log('✅ Meeting added successfully');
     
