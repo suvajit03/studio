@@ -24,6 +24,10 @@ type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactSettings() {
     const { user, addContact, updateContact, deleteContact } = useUser();
+    
+    // Debug logging
+    console.log('ContactSettings rendered with user.contacts:', user.contacts);
+    console.log('ContactSettings user.isLoggedIn:', user.isLoggedIn);
     const [isFormOpen, setFormOpen] = useState(false);
     const [editingContact, setEditingContact] = useState<Contact | null>(null);
 

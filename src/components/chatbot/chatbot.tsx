@@ -132,13 +132,19 @@ export default function Chatbot() {
         });
         
         if (result.toolRequests && result.toolRequests.length > 0) {
+            console.log('Tool requests received:', result.toolRequests);
             result.toolRequests.forEach(req => {
                 const inputData = req.input || {};
+                console.log('Processing tool request:', req.tool?.name, inputData);
                 if (req.tool?.name === 'createMeeting') {
+                    console.log('Adding meeting with data:', inputData);
+                    console.log('User logged in?', user.isLoggedIn);
                     addMeeting(inputData);
                     toast({ title: 'Meeting Scheduled!', description: 'The meeting has been added to your calendar.' });
                 }
                  if (req.tool?.name === 'createNewContact') {
+                    console.log('Adding contact with data:', inputData);
+                    console.log('User logged in?', user.isLoggedIn);
                     addContact(inputData);
                     toast({ title: 'Contact Added!', description: `${inputData.name} has been added to your contacts.` });
                 }

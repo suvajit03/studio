@@ -136,11 +136,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [user]);
   
   const addContact = useCallback((contactData: Omit<Contact, 'id'>) => {
-    if (!user.isLoggedIn) return;
+    console.log('addContact called with:', contactData);
+    console.log('user.isLoggedIn:', user.isLoggedIn);
+    console.log('current user.contacts:', user.contacts);
+    if (!user.isLoggedIn) {
+      console.log('User not logged in, returning early');
+      return;
+    }
     const newContact = {...contactData, id: crypto.randomUUID()};
+    console.log('New contact created:', newContact);
     const updatedUser = { ...user, contacts: [...user.contacts, newContact] };
+    console.log('Updated user contacts:', updatedUser.contacts);
     setUser(updatedUser);
     setAllUsers(prev => ({ ...prev, [user.email]: updatedUser }));
+    console.log('Contact added successfully');
   }, [user]);
 
   const updateContact = useCallback((updatedContact: Contact) => {
@@ -158,12 +167,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const addMeeting = useCallback((meetingData: Omit<Meeting, 'id'|'date'> & { date: string }) => {
-    if (!user.isLoggedIn) return;
+    console.log('addMeeting called with:', meetingData);
+    console.log('user.isLoggedIn:', user.isLoggedIn);
+    console.log('current user.meetings:', user.meetings);
+    if (!user.isLoggedIn) {
+      console.log('User not logged in, returning early');
+      return;
+    }
     const newMeeting: Meeting = { ...meetingData, id: crypto.randomUUID(), date: new Date(meetingData.date) };
+    console.log('New meeting created:', newMeeting);
     const updatedMeetings = [...user.meetings, newMeeting].sort((a,b) => a.date.getTime() - b.date.getTime());
     const updatedUser = { ...user, meetings: updatedMeetings };
+    console.log('Updated user meetings:', updatedUser.meetings);
     setUser(updatedUser);
     setAllUsers(prev => ({ ...prev, [user.email]: updatedUser }));
+    console.log('Meeting added successfully');
   }, [user]);
 
   const deleteMeeting = useCallback((meetingId: string) => {
