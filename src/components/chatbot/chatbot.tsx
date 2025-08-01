@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Mic, Bot, User, Volume2, Loader } from 'lucide-react';
-import type { ChatMessage } from '@/lib/types';
+import type { ChatMessage, ChatAction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { scheduleMeeting } from '@/ai/flows/schedule-meeting';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
@@ -20,8 +20,14 @@ const getInitialMessage = (mode: ChatMode): ChatMessage => ({
     id: crypto.randomUUID(),
     role: 'assistant',
     content: mode === 'chatbot'
-        ? "Hi! I'm MeetAI. I can help you with:\n\n*   Scheduling a meeting\n*   Checking the weather report\n*   Viewing your future or past meetings\n*   Adding a new contact\n\nJust let me know what you need!"
+        ? "Hi! I'm MeetAI. I can help you with:"
         : "Hello! I'm MeetAI. How can I help you today?",
+    actions: mode === 'chatbot' ? [
+        { label: 'Schedule a meeting', value: 'Schedule a meeting for tomorrow at 10am with John Doe' },
+        { label: 'Check weather report', value: 'What\'s the weather like today?' },
+        { label: 'View future meetings', value: 'Show me my upcoming meetings' },
+        { label: 'Add a new contact', value: 'Add a new contact' },
+    ] : []
 });
 
 
@@ -69,10 +75,9 @@ export default function Chatbot() {
     setMode(newMode);
     setMessages([getInitialMessage(newMode)]);
   }
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  
+  const sendMessage = async (messageContent: string) => {
+    if (!messageContent.trim() || isLoading) return;
     if (!user.isLoggedIn) {
         toast({ title: 'Please Login', description: 'You need to be logged in to chat with the assistant.', variant: 'destructive' });
         return;
@@ -81,7 +86,7 @@ export default function Chatbot() {
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: input,
+      content: messageContent,
     };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
@@ -89,7 +94,7 @@ export default function Chatbot() {
 
     try {
         const result = await scheduleMeeting({
-          instruction: input,
+          instruction: messageContent,
           contacts: user.contacts,
           userName: user.name,
           userLocation: user.location,
@@ -99,7 +104,6 @@ export default function Chatbot() {
           openAiMode: mode === 'ai',
         });
         
-        // Handle tool side effects
         if (result.toolRequests) {
             result.toolRequests.forEach(req => {
                 if (req.tool?.name === 'createMeeting' && req.input) {
@@ -139,7 +143,16 @@ export default function Chatbot() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(input);
   };
+  
+  const handleActionClick = (action: ChatAction) => {
+    sendMessage(action.value);
+  }
 
   return (
     <Card className="w-full max-w-3xl mx-auto h-full flex flex-col">
@@ -181,21 +194,33 @@ export default function Chatbot() {
                     </AvatarFallback>
                   </Avatar>
                 )}
-                <div
-                  className={cn(
-                    'max-w-[80%] rounded-lg px-3 py-2 text-sm relative group whitespace-pre-wrap',
-                    message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                  )}
-                >
-                  {message.content}
-                   {message.role === 'assistant' && (
-                     <div className="absolute -bottom-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleSynthesize(message.content, message.id)} disabled={!!isSynthesizing}>
-                            {isSynthesizing === message.id ? <Loader className="animate-spin" size={16}/> : <Volume2 size={16}/>}
-                        </Button>
-                     </div>
-                   )}
+                <div className="flex flex-col gap-2">
+                    <div
+                    className={cn(
+                        'max-w-[80%] rounded-lg px-3 py-2 text-sm relative group whitespace-pre-wrap',
+                        message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                    )}
+                    >
+                    {message.content}
+                    {message.role === 'assistant' && (
+                        <div className="absolute -bottom-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleSynthesize(message.content, message.id)} disabled={!!isSynthesizing}>
+                                {isSynthesizing === message.id ? <Loader className="animate-spin" size={16}/> : <Volume2 size={16}/>}
+                            </Button>
+                        </div>
+                    )}
+                    </div>
+                     {message.actions && message.actions.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            {message.actions.map((action, index) => (
+                                <Button key={index} size="sm" variant="outline" onClick={() => handleActionClick(action)} disabled={isLoading}>
+                                    {action.label}
+                                </Button>
+                            ))}
+                        </div>
+                    )}
                 </div>
+
                 {message.role === 'user' && (
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.avatar} />
@@ -234,7 +259,7 @@ export default function Chatbot() {
             <Button type="button" variant="ghost" size="icon" disabled={isLoading || !user.isLoggedIn}>
               <Mic className="h-5 w-5" />
             </Button>
-            <Button type="submit" size="icon" disabled={isLoading || !user.isLoggedIn}>
+            <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
               <Send className="h-5 w-5" />
             </Button>
           </form>

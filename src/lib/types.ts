@@ -55,11 +55,17 @@ export interface UserData extends User {
   meetings: Meeting[];
 }
 
+export interface ChatAction {
+  label: string;
+  value: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   isStreaming?: boolean;
+  actions?: ChatAction[];
 }
 
 export const ScheduleMeetingInputSchema = z.object({
