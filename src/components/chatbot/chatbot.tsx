@@ -116,7 +116,7 @@ export default function Chatbot() {
     setIsLoading(true);
 
     // Get the last 10 messages for context, removing IDs and actions
-    const historyForAI = newMessages.slice(-10).map(({ id, actions, ...releventData }) => releventData);
+    const historyForAI = newMessages.slice(-10).map(({ id, actions, isStreaming, ...releventData }) => releventData);
 
     try {
         const result = await scheduleMeeting({
@@ -131,18 +131,19 @@ export default function Chatbot() {
           openAiMode: true,
         });
         
-        if (result.toolRequests) {
+        if (result.toolRequests && result.toolRequests.length > 0) {
             result.toolRequests.forEach(req => {
-                if (req.tool?.name === 'createMeeting' && req.input) {
-                    addMeeting(req.input);
+                const inputData = req.input || {};
+                if (req.tool?.name === 'createMeeting') {
+                    addMeeting(inputData);
                     toast({ title: 'Meeting Scheduled!', description: 'The meeting has been added to your calendar.' });
                 }
-                 if (req.tool?.name === 'createNewContact' && req.input) {
-                    addContact(req.input);
-                    toast({ title: 'Contact Added!', description: `${req.input.name} has been added to your contacts.` });
+                 if (req.tool?.name === 'createNewContact') {
+                    addContact(inputData);
+                    toast({ title: 'Contact Added!', description: `${inputData.name} has been added to your contacts.` });
                 }
-                if (req.tool?.name === 'updateUserSettings' && req.input) {
-                    updateUser(req.input);
+                if (req.tool?.name === 'updateUserSettings') {
+                    updateUser(inputData);
                      toast({ title: 'Settings Updated!', description: 'Your account settings have been updated.' });
                 }
                 if (req.tool?.name === 'logoutUser') {
