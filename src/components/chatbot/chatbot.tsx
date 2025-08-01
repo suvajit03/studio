@@ -132,21 +132,44 @@ export default function Chatbot() {
         });
         
         if (result.toolRequests && result.toolRequests.length > 0) {
-            console.log('Tool requests received:', result.toolRequests);
+            console.log('🔧 Tool requests received:', result.toolRequests);
             result.toolRequests.forEach(req => {
                 const inputData = req.input || {};
-                console.log('Processing tool request:', req.tool?.name, inputData);
+                console.log('🔧 Processing tool request:', req.tool?.name, inputData);
+                console.log('🔧 User logged in:', user.isLoggedIn);
+                console.log('🔧 User email:', user.email);
+                
                 if (req.tool?.name === 'createMeeting') {
-                    console.log('Adding meeting with data:', inputData);
-                    console.log('User logged in?', user.isLoggedIn);
+                    console.log('📅 Adding meeting with data:', inputData);
+                    if (!user.isLoggedIn) {
+                        toast({ 
+                            title: 'Error!', 
+                            description: 'You must be logged in to schedule meetings.',
+                            variant: 'destructive'
+                        });
+                        return;
+                    }
                     addMeeting(inputData);
-                    toast({ title: 'Meeting Scheduled!', description: 'The meeting has been added to your calendar.' });
+                    toast({ 
+                        title: 'Meeting Scheduled!', 
+                        description: `"${inputData.title || 'Untitled Meeting'}" has been added to your calendar.`
+                    });
                 }
                  if (req.tool?.name === 'createNewContact') {
-                    console.log('Adding contact with data:', inputData);
-                    console.log('User logged in?', user.isLoggedIn);
+                    console.log('📇 Adding contact with data:', inputData);
+                    if (!user.isLoggedIn) {
+                        toast({ 
+                            title: 'Error!', 
+                            description: 'You must be logged in to add contacts.',
+                            variant: 'destructive'
+                        });
+                        return;
+                    }
                     addContact(inputData);
-                    toast({ title: 'Contact Added!', description: `${inputData.name} has been added to your contacts.` });
+                    toast({ 
+                        title: 'Contact Added!', 
+                        description: `${inputData.name || 'New contact'} has been added to your contacts.`
+                    });
                 }
                 if (req.tool?.name === 'updateUserSettings') {
                     updateUser(inputData);
