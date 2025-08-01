@@ -56,7 +56,7 @@ export default function WeatherReport() {
         if (!user.location) return;
         setLoading(true);
         try {
-            const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${process.env.NEXT_PUBLIC_WEATHERAPI_KEY}&q=${user.location}&days=1`);
+            const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${process.env.NEXT_PUBLIC_WEATHERAPI_KEY}&q=${user.location}&days=2`);
             
             if (!response.ok) {
                 const errorData = await response.json();
@@ -66,8 +66,13 @@ export default function WeatherReport() {
             const data = await response.json();
             const currentData = data.current;
             const forecastData = data.forecast.forecastday[0];
+            const tomorrowForecastData = data.forecast.forecastday[1];
 
-            const hourlyForecasts: ForecastInfo[] = forecastData.hour.slice(new Date().getHours()).map((item: any) => ({
+            const currentHour = new Date().getHours();
+            const todaysHours = forecastData.hour.slice(currentHour);
+            const tomorrowsHours = tomorrowForecastData.hour.slice(0, 24 - todaysHours.length);
+
+            const hourlyForecasts: ForecastInfo[] = [...todaysHours, ...tomorrowsHours].map((item: any) => ({
                 time: format(new Date(item.time_epoch * 1000), 'ha'),
                 temp: `${Math.round(item.temp_c)}°`,
                 condition: item.condition.text,
