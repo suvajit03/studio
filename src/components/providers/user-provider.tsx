@@ -14,7 +14,6 @@ interface UserContextType {
   addContact: (contact: Omit<Contact, 'id'>) => void;
   updateContact: (contact: Contact) => void;
   deleteContact: (contactId: string) => void;
-  addMeeting: (meeting: Omit<Meeting, 'id'>) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -77,13 +76,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
     deleteFirebaseContact(contactId);
   }
 
-  const addMeeting = (meeting: Omit<Meeting, 'id'>) => {
-     // This is handled by the schedule-meeting flow now.
-     // Local state will be updated via firebase listener.
-  };
-
   const contextValue = useMemo(
-    () => ({ user, login, logout, updateUser, addContact, updateContact, deleteContact, addMeeting }),
+    () => ({ user, login, logout, updateUser, addContact, updateContact, deleteContact }),
     [user]
   );
 

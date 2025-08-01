@@ -29,7 +29,7 @@ export default function Chatbot() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState<string | null>(null);
-  const { user, addMeeting } = useUser();
+  const { user } = useUser();
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
