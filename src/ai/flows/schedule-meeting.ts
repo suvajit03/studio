@@ -77,6 +77,30 @@ async (input) => {
 }
 );
 
+const searchLocation = ai.defineTool({
+  name: 'searchLocation',
+  description: 'Searches for a location, like a coffee shop or restaurant.',
+  inputSchema: z.object({
+    query: z.string().describe('The search query, e.g., "coffee shop" or "pizza".'),
+    location: z.string().describe('The area to search in, e.g., "Mountain View, CA".'),
+  }),
+  outputSchema: z.string().describe('A list of matching locations or a message if none are found.'),
+},
+async ({ query, location }) => {
+  // In a real app, you would use a proper location API (e.g., Google Maps Places API)
+  // For this demo, we'll return a mock result.
+  console.log(`Searching for ${query} near ${location}`);
+  const mockLocations = [
+    { name: "The Daily Grind", address: "123 Main St" },
+    { name: "Java Junction", address: "456 Oak Ave" },
+    { name: "Espresso Yourself", address: "789 Pine Ln" },
+  ];
+  if (query.toLowerCase().includes('coffee')) {
+    return `I found these coffee shops: ${mockLocations.map(l => `${l.name} at ${l.address}`).join(', ')}. Which one would you like?`;
+  }
+  return `I couldn't find any locations matching "${query}" near ${location}.`;
+});
+
 const createMeeting = ai.defineTool({
     name: 'createMeeting',
     description: 'Creates a new meeting and saves it to the user\'s calendar.',
@@ -113,7 +137,7 @@ async (input) => {
 
 const scheduleMeetingPrompt = ai.definePrompt({
   name: 'scheduleMeetingPrompt',
-  tools: [getWeather, sendInvite, createMeeting],
+  tools: [getWeather, sendInvite, createMeeting, searchLocation],
   input: {schema: ScheduleMeetingInputSchema},
   output: {schema: ScheduleMeetingOutputSchema},
   prompt: `You are an AI assistant that schedules meetings for users.  Your name is MeetAI.
@@ -138,6 +162,8 @@ const scheduleMeetingPrompt = ai.definePrompt({
   First, determine the details of the meeting such as title, date, time, and participants from the user's instruction.
   Use the user's information (work time, off days, current time) to validate the meeting time. It cannot be in the past.
   Identify participants from the provided contact list. If a participant is not in the list, you cannot schedule the meeting and should inform the user.
+  
+  If the user asks to find a location for the meeting (e.g., a coffee shop), use the \`searchLocation\` tool.
   
   Once you have all the details, use the \`createMeeting\` tool to save the meeting to the calendar.
   
