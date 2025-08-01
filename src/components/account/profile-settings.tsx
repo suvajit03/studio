@@ -13,12 +13,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, ChevronsUpDown, Loader2, MapPin, Upload } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { generateAvatar } from '@/ai/flows/generate-avatar';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { cn } from '@/lib/utils';
+import _ from 'lodash';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name is too short'),
@@ -40,141 +41,15 @@ const daysOfWeek = [
   { id: 6, label: 'Saturday' },
 ];
 
-const locations = [
-    { value: "tokyo, japan", label: "Tokyo, Japan" },
-    { value: "delhi, india", label: "Delhi, India" },
-    { value: "shanghai, china", label: "Shanghai, China" },
-    { value: "sao paulo, brazil", label: "São Paulo, Brazil" },
-    { value: "mumbai, india", label: "Mumbai, India" },
-    { value: "mexico city, mexico", label: "Mexico City, Mexico" },
-    { value: "beijing, china", label: "Beijing, China" },
-    { value: "osaka, japan", label: "Osaka, Japan" },
-    { value: "cairo, egypt", label: "Cairo, Egypt" },
-    { value: "new york, usa", label: "New York, USA" },
-    { value: "dhaka, bangladesh", label: "Dhaka, Bangladesh" },
-    { value: "karachi, pakistan", label: "Karachi, Pakistan" },
-    { value: "buenos aires, argentina", label: "Buenos Aires, Argentina" },
-    { value: "kolkata, india", label: "Kolkata, India" },
-    { value: "istanbul, turkey", label: "Istanbul, Turkey" },
-    { value: "chongqing, china", label: "Chongqing, China" },
-    { value: "lagos, nigeria", label: "Lagos, Nigeria" },
-    { value: "manila, philippines", label: "Manila, Philippines" },
-    { value: "rio de janeiro, brazil", label: "Rio de Janeiro, Brazil" },
-    { value: "tianjin, china", label: "Tianjin, China" },
-    { value: "kinshasa, dr congo", label: "Kinshasa, DR Congo" },
-    { value: "guangzhou, china", label: "Guangzhou, China" },
-    { value: "los angeles, usa", label: "Los Angeles, USA" },
-    { value: "moscow, russia", label: "Moscow, Russia" },
-    { value: "shenzhen, china", label: "Shenzhen, China" },
-    { value: "lahore, pakistan", label: "Lahore, Pakistan" },
-    { value: "bangalore, india", label: "Bangalore, India" },
-    { value: "paris, france", label: "Paris, France" },
-    { value: "bogota, colombia", label: "Bogotá, Colombia" },
-    { value: "jakarta, indonesia", label: "Jakarta, Indonesia" },
-    { value: "chennai, india", label: "Chennai, India" },
-    { value: "lima, peru", label: "Lima, Peru" },
-    { value: "bangkok, thailand", label: "Bangkok, Thailand" },
-    { value: "seoul, south korea", label: "Seoul, South Korea" },
-    { value: "nagoya, japan", label: "Nagoya, Japan" },
-    { value: "hyderabad, india", label: "Hyderabad, India" },
-    { value: "london, uk", label: "London, UK" },
-    { value: "tehran, iran", label: "Tehran, Iran" },
-    { value: "chicago, usa", label: "Chicago, USA" },
-    { value: "chengdu, china", label: "Chengdu, China" },
-    { value: "nanjing, china", label: "Nanjing, China" },
-    { value: "wuhan, china", label: "Wuhan, China" },
-    { value: "ho chi minh city, vietnam", label: "Ho Chi Minh City, Vietnam" },
-    { value: "hangzhou, china", label: "Hangzhou, China" },
-    { value: "ahmedabad, india", label: "Ahmedabad, India" },
-    { value: "kuala lumpur, malaysia", label: "Kuala Lumpur, Malaysia" },
-    { value: "xian, china", label: "Xi'an, China" },
-    { value: "dongguan, china", label: "Dongguan, China" },
-    { value: "foshan, china", label: "Foshan, China" },
-    { value: "shenyang, china", label: "Shenyang, China" },
-    { value: "riyadh, saudi arabia", label: "Riyadh, Saudi Arabia" },
-    { value: "baghdad, iraq", label: "Baghdad, Iraq" },
-    { value: "santiago, chile", label: "Santiago, Chile" },
-    { value: "madrid, spain", label: "Madrid, Spain" },
-    { value: "toronto, canada", label: "Toronto, Canada" },
-    { value: "miami, usa", label: "Miami, USA" },
-    { value: "houston, usa", label: "Houston, USA" },
-    { value: "dallas, usa", label: "Dallas, USA" },
-    { value: "atlanta, usa", label: "Atlanta, USA" },
-    { value: "philadelphia, usa", label: "Philadelphia, USA" },
-    { value: "washington dc, usa", label: "Washington D.C., USA" },
-    { value: "boston, usa", label: "Boston, USA" },
-    { value: "phoenix, usa", label: "Phoenix, USA" },
-    { value: "detroit, usa", label: "Detroit, USA" },
-    { value: "san francisco, usa", label: "San Francisco, USA" },
-    { value: "seattle, usa", label: "Seattle, USA" },
-    { value: "san diego, usa", label: "San Diego, USA" },
-    { value: "minneapolis, usa", label: "Minneapolis, USA" },
-    { value: "tampa, usa", label: "Tampa, USA" },
-    { value: "denver, usa", label: "Denver, USA" },
-    { value: "baltimore, usa", label: "Baltimore, USA" },
-    { value: "las vegas, usa", label: "Las Vegas, USA" },
-    { value: "st louis, usa", label: "St. Louis, USA" },
-    { value: "portland, usa", "label": "Portland, USA" },
-    { value: "orlando, usa", label: "Orlando, USA" },
-    { value: "sacramento, usa", label: "Sacramento, USA" },
-    { value: "san antonio, usa", label: "San Antonio, USA" },
-    { value: "pittsburgh, usa", label: "Pittsburgh, USA" },
-    { value: "san jose, usa", label: "San Jose, USA" },
-    { value: "cincinnati, usa", label: "Cincinnati, USA" },
-    { value: "cleveland, usa", label: "Cleveland, USA" },
-    { value: "kansas city, usa", label: "Kansas City, USA" },
-    { value: "austin, usa", label: "Austin, USA" },
-    { value: "columbus, usa", label: "Columbus, USA" },
-    { value: "charlotte, usa", label: "Charlotte, USA" },
-    { value: "indianapolis, usa", label: "Indianapolis, USA" },
-    { value: "nashville, usa", label: "Nashville, USA" },
-    { value: "virginia beach, usa", label: "Virginia Beach, USA" },
-    { value: "providence, usa", label: "Providence, USA" },
-    { value: "milwaukee, usa", label: "Milwaukee, USA" },
-    { value: "jacksonville, usa", label: "Jacksonville, USA" },
-    { value: "montreal, canada", label: "Montreal, Canada" },
-    { value: "vancouver, canada", label: "Vancouver, Canada" },
-    { value: "calgary, canada", label: "Calgary, Canada" },
-    { value: "edmonton, canada", label: "Edmonton, Canada" },
-    { value: "ottawa, canada", label: "Ottawa, Canada" },
-    { value: "quebec city, canada", label: "Quebec City, Canada" },
-    { value: "winnipeg, canada", label: "Winnipeg, Canada" },
-    { value: "hamilton, canada", label: "Hamilton, Canada" },
-    { value: "berlin, germany", label: "Berlin, Germany" },
-    { value: "hamburg, germany", label: "Hamburg, Germany" },
-    { value: "munich, germany", label: "Munich, Germany" },
-    { value: "cologne, germany", label: "Cologne, Germany" },
-    { value: "frankfurt, germany", label: "Frankfurt, Germany" },
-    { value: "stuttgart, germany", label: "Stuttgart, Germany" },
-    { value: "dusseldorf, germany", label: "Dusseldorf, Germany" },
-    { value: "dortmund, germany", label: "Dortmund, Germany" },
-    { value: "essen, germany", label: "Essen, Germany" },
-    { value: "leipzig, germany", label: "Leipzig, Germany" },
-    { value: "bremen, germany", label: "Bremen, Germany" },
-    { value: "dresden, germany", label: "Dresden, Germany" },
-    { value: "hanover, germany", label: "Hanover, Germany" },
-    { value: "nuremberg, germany", label: "Nuremberg, Germany" },
-    { value: "sydney, australia", label: "Sydney, Australia" },
-    { value: "melbourne, australia", label: "Melbourne, Australia" },
-    { value: "brisbane, australia", label: "Brisbane, Australia" },
-    { value: "perth, australia", label: "Perth, Australia" },
-    { value: "adelaide, australia", label: "Adelaide, Australia" },
-    { value: "gold coast, australia", label: "Gold Coast, Australia" },
-    { value: "canberra, australia", label: "Canberra, Australia" },
-    { value: "newcastle, australia", label: "Newcastle, Australia" },
-    { value: "wollongong, australia", label: "Wollongong, Australia" },
-    { value: "geelong, australia", label: "Geelong, Australia" },
-    { value: "hobart, australia", label: "Hobart, Australia" },
-    { value: "sunshine coast, australia", label: "Sunshine Coast, Australia" },
-    { value: "cairns, australia", label: "Cairns, Australia" },
-    { value: "dubai, uae", label: "Dubai, UAE" },
-    { value: "abu dhabi, uae", label: "Abu Dhabi, UAE" },
-    { value: "sharjah, uae", label: "Sharjah, UAE" },
-    { value: "al ain, uae", label: "Al Ain, UAE" },
-    { value: "ajman, uae", label: "Ajman, UAE" },
-    { value: "singapore", label: "Singapore" },
-    { value: "hong kong", label: "Hong Kong" },
-]
+interface LocationResult {
+    id: number;
+    name: string;
+    region: string;
+    country: string;
+    lat: number;
+    lon: number;
+    url: string;
+}
 
 interface ProfileSettingsProps {
     onSaveChanges: () => void;
@@ -187,7 +62,11 @@ export default function ProfileSettings({ onSaveChanges }: ProfileSettingsProps)
   const [avatarDescription, setAvatarDescription] = useState('');
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
-
+  
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
+  const [isSearchingLocations, setIsSearchingLocations] = useState(false);
+  const [isLocationPopoverOpen, setLocationPopoverOpen] = useState(false);
 
   const form = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -258,7 +137,7 @@ export default function ProfileSettings({ onSaveChanges }: ProfileSettingsProps)
                 const data = await response.json();
                 if (data.location) {
                     const locationName = `${data.location.name}, ${data.location.country}`;
-                    form.setValue('location', locationName.toLowerCase());
+                    form.setValue('location', locationName);
                     toast({ title: "Location updated!", description: `Your location has been set to ${locationName}.` });
                 } else {
                     toast({ title: "Could not find location", description: "We couldn't determine your city from your coordinates.", variant: "destructive" });
@@ -276,7 +155,35 @@ export default function ProfileSettings({ onSaveChanges }: ProfileSettingsProps)
             setIsFetchingLocation(false);
         }
     )
+  }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedLocationSearch = useCallback(_.debounce(async (query: string) => {
+    if (query.length < 2) {
+        setLocationResults([]);
+        setIsSearchingLocations(false);
+        return;
+    }
+    setIsSearchingLocations(true);
+    try {
+        const response = await fetch(`https://api.weatherapi.com/v1/search.json?key=${process.env.NEXT_PUBLIC_WEATHERAPI_KEY}&q=${query}`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch locations");
+        }
+        const data = await response.json();
+        setLocationResults(data);
+    } catch(e) {
+        console.error(e);
+        toast({ title: "Error", description: "Could not search for locations.", variant: "destructive"});
+    } finally {
+        setIsSearchingLocations(false);
+    }
+  }, 300), []);
+
+
+  const handleLocationQueryChange = (query: string) => {
+    setLocationQuery(query);
+    debouncedLocationSearch(query);
   }
 
   return (
@@ -320,53 +227,60 @@ export default function ProfileSettings({ onSaveChanges }: ProfileSettingsProps)
                 render={({ field }) => (
                     <FormItem className="flex flex-col">
                         <FormLabel>Location</FormLabel>
-                        <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                            <Button
-                                variant="outline"
-                                role="combobox"
-                                className={cn(
-                                "w-full justify-between capitalize",
-                                !field.value && "text-muted-foreground"
-                                )}
-                            >
-                                {field.value
-                                ? locations.find(l => l.value === field.value)?.label ?? field.value
-                                : "Select location"}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
-                                <CommandInput placeholder="Search location..." />
-                                <CommandList>
-                                    <CommandEmpty>No location found.</CommandEmpty>
-                                    <CommandGroup>
-                                        {locations.map((location) => (
-                                        <CommandItem
-                                            value={location.label}
-                                            key={location.value}
-                                            onSelect={() => {
-                                                form.setValue("location", location.value)
-                                            }}
-                                        >
-                                            <Check
-                                            className={cn(
-                                                "mr-2 h-4 w-4",
-                                                location.value === field.value
-                                                ? "opacity-100"
-                                                : "opacity-0"
-                                            )}
-                                            />
-                                            {location.label}
-                                        </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
+                        <Popover open={isLocationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        className={cn(
+                                            "w-full justify-between capitalize",
+                                            !field.value && "text-muted-foreground"
+                                        )}
+                                    >
+                                        {field.value || "Select location"}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <Command>
+                                    <CommandInput 
+                                        placeholder="Search location..." 
+                                        value={locationQuery}
+                                        onValueChange={handleLocationQueryChange}
+                                    />
+                                    <CommandList>
+                                        {isSearchingLocations && <div className="p-2 flex justify-center"><Loader2 className="h-4 w-4 animate-spin"/></div>}
+                                        {!isSearchingLocations && locationResults.length === 0 && locationQuery.length > 1 && <CommandEmpty>No location found.</CommandEmpty>}
+                                        <CommandGroup>
+                                            {locationResults.map((location) => {
+                                                const locationName = `${location.name}, ${location.country}`;
+                                                return (
+                                                    <CommandItem
+                                                        value={locationName}
+                                                        key={location.id}
+                                                        onSelect={() => {
+                                                            form.setValue("location", locationName);
+                                                            setLocationPopoverOpen(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                locationName === field.value
+                                                                    ? "opacity-100"
+                                                                    : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {locationName}
+                                                    </CommandItem>
+                                                )
+                                            })}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
                         </Popover>
                         <Button type="button" variant="link" size="sm" className="self-start px-1" onClick={handleFetchCurrentLocation} disabled={isFetchingLocation}>
                             {isFetchingLocation ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MapPin className="mr-2 h-4 w-4"/>}
@@ -475,7 +389,3 @@ export default function ProfileSettings({ onSaveChanges }: ProfileSettingsProps)
     </>
   );
 }
-
-    
-
-    

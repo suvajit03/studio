@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -70,18 +71,21 @@ export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<Sche
     outputSchema: z.string().describe('A list of matching locations or a message if none are found.'),
   },
   async ({ query, location }) => {
-    // In a real app, you would use a proper location API (e.g., Google Maps Places API)
-    // For this demo, we'll return a mock result.
-    console.log(`Searching for ${query} near ${location}`);
-    const mockLocations = [
-      { name: "The Daily Grind", address: "123 Main St" },
-      { name: "Java Junction", address: "456 Oak Ave" },
-      { name: "Espresso Yourself", address: "789 Pine Ln" },
-    ];
-    if (query.toLowerCase().includes('coffee')) {
-      return `I found these coffee shops: ${mockLocations.map(l => `${l.name} at ${l.address}`).join(', ')}. Which one would you like?`;
+    try {
+        const searchResponse = await fetch(`https://api.weatherapi.com/v1/search.json?key=${process.env.WEATHERAPI_KEY}&q=${query} in ${location}`);
+        if (!searchResponse.ok) {
+            return `Sorry, I couldn't search for "${query}" near ${location}.`;
+        }
+        const searchData = await searchResponse.json();
+        if (searchData && searchData.length > 0) {
+            const locations = searchData.map((l: any) => `${l.name}, ${l.region}`).join('; ');
+            return `I found these locations: ${locations}. Which one would you like?`;
+        }
+        return `I couldn't find any locations matching "${query}" near ${location}.`;
+    } catch(e) {
+        console.error(e);
+        return `Sorry, I couldn't search for locations.`;
     }
-    return `I couldn't find any locations matching "${query}" near ${location}.`;
   });
 
 
