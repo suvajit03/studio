@@ -27,10 +27,11 @@ const getWeatherIcon = (condition: string, size: number = 4) => {
 const weatherMetrics: WeatherMetric[] = [
     { name: 'Wind', key: 'maxwind_kph', unit: ' km/h', icon: Wind, precision: 0 },
     { name: 'Humidity', key: 'avghumidity', unit: '%', icon: Thermometer, precision: 0 },
-    { name: 'Feels Like', key: 'feelslike_c', unit: '°C', icon: Thermometer, precision: 0 },
+    { name: 'Feels Like', key: 'feelslike_c', unit: '°C', icon: Thermometer, precision: 1 },
     { name: 'Pressure', key: 'pressure_mb', unit: ' hPa', icon: Gauge, precision: 0 },
-    { name: 'Visibility', key: 'vis_km', unit: ' km', icon: Eye, precision: 0 },
+    { name: 'Visibility', key: 'avgvis_km', unit: ' km', icon: Eye, precision: 0 },
     { name: 'Cloudiness', key: 'cloud', unit: '%', icon: CloudinessIcon, precision: 0 },
+    { name: 'Temperature', key: 'avgtemp_c', unit: '°C', icon: Thermometer, precision: 1}
 ];
 
 export default function WeatherReport() {
@@ -232,4 +233,5 @@ export default function WeatherReport() {
     </>
   );
 }
+
 

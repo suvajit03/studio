@@ -121,7 +121,7 @@ export interface WeatherInfo {
 
 export interface WeatherMetric {
     name: string;
-    key: keyof WeatherInfo['day'] | keyof WeatherInfo['current'];
+    key: keyof WeatherInfo['day'] | keyof WeatherInfo['current'] | 'feelslike_c' | 'pressure_mb';
     unit: string;
     icon: LucideIcon;
     precision: number;
