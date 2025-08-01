@@ -1,4 +1,3 @@
-// schedule-meeting.ts
 'use server';
 
 /**
@@ -14,11 +13,20 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { addMeeting } from '@/lib/firebase-service';
 
 const ContactSchema = z.object({
+  id: z.string().describe('Contact ID'),
   name: z.string().describe('Contact name'),
   email: z.string().email().describe('Contact email address'),
   number: z.string().optional().describe('Contact phone number'),
+});
+
+const MeetingSchema = z.object({
+    title: z.string().describe('The title of the meeting.'),
+    date: z.string().datetime().describe('The date and time of the meeting in ISO 8601 format.'),
+    participants: z.array(z.string()).describe('A list of contact IDs for the participants.'),
+    notes: z.string().optional().describe('Any notes for the meeting.'),
 });
 
 const ScheduleMeetingInputSchema = z.object({
@@ -55,11 +63,38 @@ const getWeather = ai.defineTool({
   outputSchema: z.string().describe('A summary of the current weather conditions.'),
 },
 async (input) => {
-  // TODO: Implement the weather API call here.
-  // For now, return a dummy weather report.
-  return `The weather in ${input.location} is sunny with a temperature of 25 degrees Celsius.`
+  try {
+    const weatherResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${input.location}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`);
+    if (!weatherResponse.ok) {
+        return `Sorry, I couldn't get the weather for ${input.location}.`;
+    }
+    const weather = await weatherResponse.json();
+    return `The weather in ${input.location} is ${weather.weather[0].description} with a temperature of ${weather.main.temp} degrees Celsius.`
+  } catch(e) {
+    console.error(e);
+    return `Sorry, I couldn't get the weather for ${input.location}.`;
+  }
 }
 );
+
+const createMeeting = ai.defineTool({
+    name: 'createMeeting',
+    description: 'Creates a new meeting and saves it to the user\'s calendar.',
+    inputSchema: MeetingSchema,
+    outputSchema: z.object({ success: z.boolean() }),
+}, async (meeting) => {
+    try {
+        await addMeeting({
+            ...meeting,
+            date: new Date(meeting.date)
+        })
+        return { success: true };
+    } catch(e) {
+        console.error(e)
+        return { success: false }
+    }
+})
+
 
 const sendInvite = ai.defineTool({
   name: 'sendInvite',
@@ -71,8 +106,6 @@ const sendInvite = ai.defineTool({
   outputSchema: z.boolean().describe('Indicates if the meeting invite was successfully sent.'),
 },
 async (input) => {
-  // TODO: Implement the email sending logic here.
-  // For now, just return true to simulate successful sending.
   console.log(`Sending invite to ${input.recipientEmails.join(', ')} with details: ${input.meetingDetails}`);
   return true;
 }
@@ -80,7 +113,7 @@ async (input) => {
 
 const scheduleMeetingPrompt = ai.definePrompt({
   name: 'scheduleMeetingPrompt',
-  tools: [getWeather, sendInvite],
+  tools: [getWeather, sendInvite, createMeeting],
   input: {schema: ScheduleMeetingInputSchema},
   output: {schema: ScheduleMeetingOutputSchema},
   prompt: `You are an AI assistant that schedules meetings for users.  Your name is MeetAI.
@@ -89,11 +122,12 @@ const scheduleMeetingPrompt = ai.definePrompt({
   The user's location is: {{userLocation}}
   The user's working hours are: {{workTime}}
   The user's off days are: {{offDays}}
+  The current date and time is: ${new Date().toISOString()}
 
   The following contacts are available:
   {{#if contacts}}
   {{#each contacts}}
-  - {{name}} ({{email}})
+  - ID: {{id}}, Name: {{name}} ({{email}})
   {{/each}}
   {{else}}
   No contacts available.
@@ -101,12 +135,17 @@ const scheduleMeetingPrompt = ai.definePrompt({
 
   Instructions: {{{instruction}}}
 
-  First, use the getWeather tool to check weather condition for the user location if it is available.
-  Then schedule a meeting based on the user's instruction, taking into account the user's work time, off days, and available contacts.
-  If specific contacts are mentioned use only those, otherwise create a new contact. If there is no contact information create it on your own and if email address is present, use the sendInvite tool to send out invites.
-  Return a summary of the scheduled meeting details and indicate if the invite was sent.
-
-  Consider the weather condition, and if it's bad suggest to reschedule the meeting.
+  First, determine the details of the meeting such as title, date, time, and participants from the user's instruction.
+  Use the user's information (work time, off days, current time) to validate the meeting time. It cannot be in the past.
+  Identify participants from the provided contact list. If a participant is not in the list, you cannot schedule the meeting and should inform the user.
+  
+  Once you have all the details, use the \`createMeeting\` tool to save the meeting to the calendar.
+  
+  If the instruction involves checking the weather, use the \`getWeather\` tool for the user's location. If the weather is bad (e.g., rain, snow), you can suggest rescheduling but still proceed with scheduling if the user insists.
+  
+  After successfully creating the meeting, if participant emails are available, use the \`sendInvite\` tool to send out the invites.
+  
+  Finally, return a summary of the scheduled meeting details and indicate if the invite was sent.
 
   Output should be in JSON format.
   `,
@@ -123,4 +162,3 @@ const scheduleMeetingFlow = ai.defineFlow(
     return output!;
   }
 );
-

@@ -1,19 +1,20 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useState, useMemo } from 'react';
+import { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import type { UserData, Contact, Meeting } from '@/lib/types';
 import { DUMMY_USER_DATA, DUMMY_CONTACTS, DUMMY_MEETINGS } from '@/lib/dummy-data';
+import { onMeetingsUpdate, onContactsUpdate, updateUser as updateFirebaseUser, addContact as addFirebaseContact, updateContact as updateFirebaseContact, deleteContact as deleteFirebaseContact } from '@/lib/firebase-service';
 
 interface UserContextType {
   user: UserData;
   login: (email: string) => void;
   logout: () => void;
-  updateUser: (data: Partial<UserData>) => void;
+  updateUser: (data: Partial<Omit<UserData, 'meetings' | 'contacts'>>) => void;
   addContact: (contact: Omit<Contact, 'id'>) => void;
   updateContact: (contact: Contact) => void;
   deleteContact: (contactId: string) => void;
-  addMeeting: (meeting: Meeting) => void;
+  addMeeting: (meeting: Omit<Meeting, 'id'>) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -33,36 +34,52 @@ const GUEST_USER: UserData = {
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserData>(GUEST_USER);
 
+  useEffect(() => {
+    if (user.isLoggedIn) {
+      const meetingsUnsubscribe = onMeetingsUpdate((meetings) => {
+        setUser(prev => ({...prev, meetings: meetings.sort((a,b) => a.date.getTime() - b.date.getTime())}))
+      });
+      
+      const contactsUnsubscribe = onContactsUpdate((contacts) => {
+        setUser(prev => ({...prev, contacts }))
+      });
+
+      return () => {
+        meetingsUnsubscribe();
+        contactsUnsubscribe();
+      }
+    }
+  }, [user.isLoggedIn])
+
   const login = (email: string) => {
-    setUser({ ...DUMMY_USER_DATA, email, isLoggedIn: true, contacts: DUMMY_CONTACTS, meetings: DUMMY_MEETINGS });
+    const fullUserData = { ...DUMMY_USER_DATA, email, isLoggedIn: true, contacts: DUMMY_CONTACTS, meetings: DUMMY_MEETINGS };
+    setUser(fullUserData);
   };
 
   const logout = () => {
     setUser(GUEST_USER);
   };
 
-  const updateUser = (data: Partial<UserData>) => {
+  const updateUser = (data: Partial<Omit<UserData, 'meetings' | 'contacts'>>) => {
     setUser((prev) => ({ ...prev, ...data }));
+    updateFirebaseUser(data);
   };
 
   const addContact = (contactData: Omit<Contact, 'id'>) => {
-    const newContact: Contact = { ...contactData, id: crypto.randomUUID() };
-    setUser(prev => ({ ...prev, contacts: [...prev.contacts, newContact] }));
+    addFirebaseContact(contactData);
   };
 
   const updateContact = (updatedContact: Contact) => {
-    setUser(prev => ({
-      ...prev,
-      contacts: prev.contacts.map(c => c.id === updatedContact.id ? updatedContact : c),
-    }));
+    updateFirebaseContact(updatedContact);
   };
 
   const deleteContact = (contactId: string) => {
-    setUser(prev => ({...prev, contacts: prev.contacts.filter(c => c.id !== contactId)}));
+    deleteFirebaseContact(contactId);
   }
 
-  const addMeeting = (meeting: Meeting) => {
-    setUser((prev) => ({ ...prev, meetings: [...prev.meetings, meeting].sort((a,b) => a.date.getTime() - b.date.getTime()) }));
+  const addMeeting = (meeting: Omit<Meeting, 'id'>) => {
+     // This is handled by the schedule-meeting flow now.
+     // Local state will be updated via firebase listener.
   };
 
   const contextValue = useMemo(

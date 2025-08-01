@@ -11,6 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { generateAvatar } from '@/ai/flows/generate-avatar';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Textarea } from '../ui/textarea';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name is too short'),
@@ -35,6 +39,10 @@ const daysOfWeek = [
 export default function ProfileSettings() {
   const { user, updateUser } = useUser();
   const { toast } = useToast();
+  const [isAvatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const [avatarDescription, setAvatarDescription] = useState('');
+  const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+
 
   const form = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -66,7 +74,27 @@ export default function ProfileSettings() {
     });
   }
 
+  const handleGenerateAvatar = async () => {
+    if (!avatarDescription.trim()) {
+        toast({ title: 'Error', description: 'Please provide a description for your avatar.', variant: 'destructive' });
+        return;
+    }
+    setIsGeneratingAvatar(true);
+    try {
+        const { avatarDataUri } = await generateAvatar({ description: avatarDescription });
+        form.setValue('avatar', avatarDataUri);
+        setAvatarDialogOpen(false);
+        toast({ title: 'Avatar Generated!', description: 'Your new avatar has been set.'});
+    } catch (error) {
+        console.error('Avatar generation failed:', error);
+        toast({ title: 'Error', description: 'Failed to generate avatar. Please try again.', variant: 'destructive' });
+    } finally {
+        setIsGeneratingAvatar(false);
+    }
+  }
+
   return (
+    <>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="space-y-4">
@@ -76,7 +104,7 @@ export default function ProfileSettings() {
                     <AvatarImage src={form.watch('avatar')} alt={user.name} />
                     <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                 </Avatar>
-                <Button type="button" variant="outline"><Upload className="mr-2 h-4 w-4" /> Upload Image</Button>
+                <Button type="button" variant="outline" onClick={() => setAvatarDialogOpen(true)}><Upload className="mr-2 h-4 w-4" /> Generate Avatar</Button>
             </div>
             <FormField
                 control={form.control}
@@ -185,5 +213,28 @@ export default function ProfileSettings() {
         <Button type="submit">Save Changes</Button>
       </form>
     </Form>
+
+    <Dialog open={isAvatarDialogOpen} onOpenChange={setAvatarDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Generate AI Avatar</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+                <p>Describe your desired avatar. Be as specific as you like!</p>
+                <Textarea 
+                    placeholder="e.g., A friendly cartoon robot with a blue helmet..."
+                    value={avatarDescription}
+                    onChange={(e) => setAvatarDescription(e.target.value)}
+                />
+            </div>
+            <DialogFooter>
+                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                <Button onClick={handleGenerateAvatar} disabled={isGeneratingAvatar}>
+                    {isGeneratingAvatar ? 'Generating...' : 'Generate'}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }

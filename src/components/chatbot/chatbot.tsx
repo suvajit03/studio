@@ -5,12 +5,13 @@ import { useUser } from '@/components/providers/user-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Mic, Bot, User } from 'lucide-react';
+import { Send, Mic, Bot, User, Volume2, Loader } from 'lucide-react';
 import type { ChatMessage } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { scheduleMeeting } from '@/ai/flows/schedule-meeting';
 import { answerQuestion } from '@/ai/flows/answer-questions';
 import { modifyWebsite } from '@/ai/flows/modify-website';
+import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Card, CardContent, CardHeader } from '../ui/card';
@@ -27,9 +28,11 @@ export default function Chatbot() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useUser();
+  const [isSynthesizing, setIsSynthesizing] = useState<string | null>(null);
+  const { user, addMeeting: addUserMeeting } = useUser();
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [mode, setMode] = useState<ChatMode>('schedule');
 
   useEffect(() => {
@@ -40,6 +43,27 @@ export default function Chatbot() {
       }
     }
   }, [messages]);
+  
+  const playAudio = (audioDataUri: string) => {
+    if (audioRef.current) {
+      audioRef.current.src = audioDataUri;
+      audioRef.current.play().catch(e => console.error("Audio play failed", e));
+    }
+  };
+
+  const handleSynthesize = async (text: string, messageId: string) => {
+    setIsSynthesizing(messageId);
+    try {
+        const { audioDataUri } = await textToSpeech({ text });
+        playAudio(audioDataUri);
+    } catch(e) {
+        console.error(e)
+        toast({ title: 'Error', description: 'Could not synthesize audio.', variant: 'destructive' })
+    } finally {
+        setIsSynthesizing(null);
+    }
+  }
+
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,11 +83,11 @@ export default function Chatbot() {
       if (mode === 'schedule') {
         const result = await scheduleMeeting({
           instruction: input,
-          contacts: user.contacts as { name: string; email: string; number?: string }[],
+          contacts: user.contacts,
           userName: user.name,
           userLocation: user.location,
           workTime: `${user.workTime.start}-${user.workTime.end}`,
-          offDays: user.offDays.join(','),
+          offDays: user.offDays.map(d => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d]).join(','),
         });
         response = result.meetingDetails;
         if (result.inviteSent) {
@@ -101,6 +125,7 @@ export default function Chatbot() {
 
   return (
     <Card className="w-full max-w-3xl mx-auto h-full flex flex-col">
+       <audio ref={audioRef} />
       <CardHeader className="flex flex-row items-center gap-3">
         <Bot className="h-8 w-8 text-primary" />
         <div>
@@ -132,7 +157,7 @@ export default function Chatbot() {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={cn('flex items-end gap-2', message.role === 'user' ? 'justify-end' : 'justify-start')}
+                className={cn('flex items-start gap-2', message.role === 'user' ? 'justify-end' : 'justify-start')}
               >
                 {message.role === 'assistant' && (
                   <Avatar className="h-8 w-8">
@@ -143,11 +168,18 @@ export default function Chatbot() {
                 )}
                 <div
                   className={cn(
-                    'max-w-[80%] rounded-lg px-3 py-2 text-sm',
+                    'max-w-[80%] rounded-lg px-3 py-2 text-sm relative group',
                     message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
                   )}
                 >
                   {message.content}
+                   {message.role === 'assistant' && (
+                     <div className="absolute -bottom-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleSynthesize(message.content, message.id)} disabled={!!isSynthesizing}>
+                            {isSynthesizing === message.id ? <Loader className="animate-spin" size={16}/> : <Volume2 size={16}/>}
+                        </Button>
+                     </div>
+                   )}
                 </div>
                 {message.role === 'user' && (
                   <Avatar className="h-8 w-8">
@@ -160,7 +192,7 @@ export default function Chatbot() {
               </div>
             ))}
             {isLoading && (
-              <div className="flex items-end gap-2 justify-start">
+              <div className="flex items-start gap-2 justify-start">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback>
                     <Bot size={20} />
