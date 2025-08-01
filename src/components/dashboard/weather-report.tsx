@@ -121,7 +121,7 @@ export default function WeatherReport() {
             <div className="flex-1 min-w-0">
                  <CardTitle className="text-lg sm:text-2xl">Current Weather</CardTitle>
                 <CardDescription className="capitalize">
-                    {user.isLoggedIn && user.location ? `Live report for ${user.location}.` : 'Log in and set a location.'}
+                    {user.isLoggedIn && user.location ? (isMobile ? user.location : `Live report for ${user.location}.`) : 'Log in and set a location.'}
                 </CardDescription>
             </div>
             {user.isLoggedIn && user.location &&
