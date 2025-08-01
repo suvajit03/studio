@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bot, Bell, Calendar, Sun } from 'lucide-react';
+import { Bot, Bell, Calendar, Sun, Menu } from 'lucide-react';
 import AuthButton from '@/components/auth/auth-button';
 import Chatbot from '@/components/chatbot/chatbot';
 import {
@@ -10,6 +10,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { useUser } from '../providers/user-provider';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -19,7 +26,8 @@ import WeatherReport from '../dashboard/weather-report';
 export function MainLayout() {
   const { user } = useUser();
   const futureMeetings = user.meetings.filter((m) => m.date >= new Date());
-  
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
   const getInitials = (name: string) =>
     name
       .split(' ')
@@ -30,24 +38,27 @@ export function MainLayout() {
   return (
       <div className="h-screen w-full bg-background flex flex-col">
         <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-16 items-center justify-between gap-4">
+            <div className="container flex h-16 items-center justify-between gap-2 sm:gap-4">
               <div className="flex items-center gap-2">
-                 <Popover>
-                  <PopoverTrigger asChild>
+                <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                  <SheetTrigger asChild>
                     <Button variant="ghost" size="icon">
                       <Bell />
                       <span className="sr-only">Notifications</span>
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80">
-                    <Tabs defaultValue="notifications" className="w-full">
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                    <SheetHeader>
+                        <SheetTitle>Updates</SheetTitle>
+                    </SheetHeader>
+                    <Tabs defaultValue="notifications" className="w-full mt-4">
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="notifications">
                           Notifications
                         </TabsTrigger>
                         <TabsTrigger value="meetings">Meetings</TabsTrigger>
                       </TabsList>
-                      <TabsContent value="notifications">
+                      <TabsContent value="notifications" className="mt-4">
                         <div className="flex flex-col gap-2 pt-2">
                           <div className="flex items-center gap-2 rounded-md border p-2">
                             <Avatar className="h-8 w-8">
@@ -71,7 +82,7 @@ export function MainLayout() {
                           </div>
                         </div>
                       </TabsContent>
-                      <TabsContent value="meetings">
+                      <TabsContent value="meetings" className="mt-4">
                         <div className="flex flex-col gap-2 pt-2">
                           {futureMeetings.length > 0 ? (
                             futureMeetings.map((meeting) => (
@@ -96,15 +107,15 @@ export function MainLayout() {
                         </div>
                       </TabsContent>
                     </Tabs>
-                  </PopoverContent>
-                </Popover>
-                <h1 className="text-xl md:text-2xl font-bold font-headline text-primary hidden sm:block">
+                  </SheetContent>
+                </Sheet>
+                 <h1 className="text-xl font-bold font-headline text-primary">
                   MeetAI
                 </h1>
               </div>
               
               <div className="flex-1 flex justify-center">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1 sm:gap-4">
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant="ghost" size="icon" className="md:w-auto md:px-4">
@@ -137,7 +148,7 @@ export function MainLayout() {
         </header>
 
         <div className="flex-grow flex overflow-hidden">
-            <main className="flex-1 flex p-0 md:p-4">
+            <main className="flex-1 flex p-0">
                 <Chatbot />
             </main>
         </div>

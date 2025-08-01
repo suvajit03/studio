@@ -15,16 +15,18 @@ import {
 import AuthDialog from './auth-dialog';
 import AccountSettingsDialog from '../account/account-settings-dialog';
 import { User, LogOut } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function AuthButton() {
   const { user, logout } = useUser();
   const [isAuthDialogOpen, setAuthDialogOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   if (!user.isLoggedIn) {
     return (
       <>
-        <Button onClick={() => setAuthDialogOpen(true)}>Login / Sign Up</Button>
+        <Button onClick={() => setAuthDialogOpen(true)} size={isMobile ? 'sm' : 'default'}>Login / Sign Up</Button>
         <AuthDialog open={isAuthDialogOpen} onOpenChange={setAuthDialogOpen} />
       </>
     );

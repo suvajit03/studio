@@ -262,18 +262,21 @@ Sidebar.displayName = "Sidebar"
 const SidebarTrigger = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>
->(({ children, ...props }, ref) => {
+>((className, ref) => {
   const { toggleSidebar } = useSidebar()
-  const child = React.Children.only(children)
 
-  return React.cloneElement(child, {
-    ...props,
-    ref,
-    onClick: () => {
-      toggleSidebar()
-      child.props.onClick?.()
-    },
-  })
+  return (
+    <Button
+        ref={ref}
+        onClick={() => toggleSidebar()}
+        className={cn(className)}
+        variant="ghost"
+        size="icon"
+      >
+        <PanelLeft />
+        <span className="sr-only">Toggle Sidebar</span>
+      </Button>
+  )
 })
 SidebarTrigger.displayName = "SidebarTrigger"
 
