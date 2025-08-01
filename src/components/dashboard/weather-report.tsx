@@ -2,12 +2,14 @@
 
 import { useUser } from '@/components/providers/user-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Cloud, CloudRain, CloudSnow, Thermometer, Wind, Loader2, Sunrise, Sunset, Eye, Gauge, CloudIcon as CloudinessIcon, Clock } from 'lucide-react';
+import { Sun, Cloud, CloudRain, CloudSnow, Thermometer, Wind, Loader2, Sunrise, Sunset, Eye, Gauge, CloudIcon as CloudinessIcon, Clock, ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { format } from 'date-fns';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
+import Link from 'next/link';
+import { Button } from '../ui/button';
 
 interface ForecastInfo {
     time: string;
@@ -115,10 +117,22 @@ export default function WeatherReport() {
   return (
     <Card className={isMobile ? "border-0 shadow-none" : ""}>
       <CardHeader>
-        <CardTitle>Current Weather</CardTitle>
-        <CardDescription className="capitalize">
-            {user.isLoggedIn && user.location ? `Live weather report for ${user.location}.` : 'Log in and set a location to see the weather.'}
-        </CardDescription>
+        <div className="flex justify-between items-center">
+            <div>
+                 <CardTitle>Current Weather</CardTitle>
+                <CardDescription className="capitalize">
+                    {user.isLoggedIn && user.location ? `Live weather report for ${user.location}.` : 'Log in and set a location to see the weather.'}
+                </CardDescription>
+            </div>
+            {user.isLoggedIn && user.location &&
+                <Button asChild variant="outline" size="sm">
+                    <Link href="/forecast">
+                        5-Day Forecast
+                        <ArrowRight className="ml-2 h-4 w-4"/>
+                    </Link>
+                </Button>
+            }
+        </div>
       </CardHeader>
       <CardContent>
         {loading && <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}
