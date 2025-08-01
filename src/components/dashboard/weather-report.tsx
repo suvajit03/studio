@@ -125,7 +125,7 @@ export default function WeatherReport() {
                 </CardDescription>
             </div>
             {user.isLoggedIn && user.location &&
-                <Button asChild variant="outline" size="sm" className="shrink-0 text-[10px] sm:text-sm p-2 sm:p-3">
+                <Button asChild variant="outline" size="sm" className="shrink-0 text-[11px] sm:text-sm p-2 sm:p-3">
                     <Link href="/forecast">
                         <span>5-Day Forecast</span>
                         <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4"/>
