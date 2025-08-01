@@ -24,7 +24,46 @@ const createMeeting = ai.defineTool({
     inputSchema: MeetingSchema,
     outputSchema: z.object({ success: z.boolean() }),
 }, async (meeting) => {
-    // In a real implementation, this would use the Google Calendar API.
+    // In a real implementation, you would use the googleapis library
+    // and a user's OAuth token to create an event.
+    // This requires setting up OAuth 2.0 credentials in Google Cloud Console.
+    // Example:
+    /*
+    const { google } = require('googleapis');
+    const { OAuth2 } = google.auth;
+
+    // NOTE: You would need to get the user's access and refresh tokens
+    // through a secure OAuth flow.
+    const oauth2Client = new OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET
+    );
+    oauth2Client.setCredentials({
+        access_token: 'USER_ACCESS_TOKEN',
+        refresh_token: 'USER_REFRESH_TOKEN'
+    });
+
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+    const event = {
+        summary: meeting.title,
+        description: meeting.notes,
+        start: {
+            dateTime: new Date(meeting.date).toISOString(),
+            timeZone: 'America/Los_Angeles', // This should be dynamic based on user settings
+        },
+        end: {
+            dateTime: new Date(new Date(meeting.date).getTime() + 60 * 60 * 1000).toISOString(), // Assuming 1 hour duration
+            timeZone: 'America/Los_Angeles',
+        },
+        attendees: meeting.participants?.map(email => ({ email })),
+    };
+
+    await calendar.events.insert({
+        calendarId: 'primary',
+        resource: event,
+    });
+    */
     console.log("AI is creating meeting in Google Calendar:", meeting);
     return { success: true };
 });
@@ -201,3 +240,5 @@ export async function scheduleMeeting(input: ScheduleMeetingInput): Promise<Sche
     })) || [],
   };
 }
+
+    
