@@ -9,9 +9,9 @@ export interface Contact {
 }
 
 export const MeetingSchema = z.object({
-  title: z.string().describe('The title of the meeting.'),
+  title: z.string().optional().describe('The title of the meeting. Defaults to "Untitled Meeting" if not provided.'),
   date: z.string().describe('The date and time of the meeting in ISO 8601 format.'),
-  participants: z.array(z.string()).describe('An array of participant contact IDs.'),
+  participants: z.array(z.string()).optional().describe('An array of participant contact IDs. Can be empty.'),
   notes: z.string().optional().describe('Optional notes for the meeting.'),
 });
 export type MeetingData = z.infer<typeof MeetingSchema>;

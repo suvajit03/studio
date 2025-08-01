@@ -31,7 +31,7 @@ const getWeather = ai.defineTool({
 },
 async (input) => {
   try {
-    const weatherResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${input.location}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`);
+    const weatherResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${input.location}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`);
     if (!weatherResponse.ok) {
         return `Sorry, I couldn't get the weather for ${input.location}.`;
     }
@@ -77,6 +77,8 @@ const createMeeting = ai.defineTool({
     try {
         await addMeeting({
             ...meeting,
+            title: meeting.title || 'Untitled Meeting',
+            participants: meeting.participants || [],
             date: new Date(meeting.date)
         })
         return { success: true };
@@ -127,12 +129,12 @@ const scheduleMeetingPrompt = ai.definePrompt({
   Instructions: {{{instruction}}}
 
   Follow these steps to schedule a meeting:
-  1.  **Extract Details**: Determine the meeting's title, date, time, and participants from the user's instruction.
+  1.  **Extract Details**: Determine the meeting's title, date, time, and participants from the user's instruction. If the title is not provided, you may leave it undefined. If participants are not specified, you may also leave that field empty. A date and time are always required.
   2.  **Validate Time**: Use the user's information (work time, off days, current time) to validate the proposed meeting time. The meeting cannot be in the past or on an off day.
-  3.  **Identify Participants**: Match the requested participants with the contact list. If a participant's name is mentioned but is not in the list, you must inform the user that you cannot schedule the meeting because the contact does not exist. Do not proceed.
+  3.  **Identify Participants**: If participants are requested, match them with the contact list. If a participant's name is mentioned but is not in the list, you must inform the user that you cannot schedule the meeting because the contact does not exist. Do not proceed.
   4.  **Find Location (if needed)**: If the user asks to find a location (e.g., "a coffee shop"), use the \`searchLocation\` tool.
   5.  **Check Weather (if needed)**: If the instruction involves checking the weather, use the \`getWeather\` tool. If the weather is bad (e.g., rain, snow), you can suggest rescheduling but proceed if the user insists.
-  6.  **Create Meeting**: Once you have confirmed all details (title, valid date/time, existing participants), you **MUST** call the \`createMeeting\` tool to save the meeting to the calendar.
+  6.  **Create Meeting**: Once you have confirmed all details (a valid date/time and existing participants if any were provided), you **MUST** call the \`createMeeting\` tool to save the meeting to the calendar. Use "Untitled Meeting" if no title was provided.
   7.  **Send Invites (if needed)**: After successfully creating the meeting, if participant emails are available, use the \`sendInvite\` tool to send the invites.
   8.  **Final Summary**: Return a summary of the scheduled meeting details and confirm whether the invite was sent.
 
