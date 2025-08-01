@@ -118,7 +118,7 @@ export default function WeatherReport() {
     if(typeof value === 'number') {
         return value.toFixed(precision);
     }
-    return 'N/A';
+    return value || 'N/A';
   }
 
   return (
@@ -234,4 +234,4 @@ export default function WeatherReport() {
   );
 }
 
-
+    
