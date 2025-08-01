@@ -9,9 +9,9 @@ export const DUMMY_USER_DATA: Omit<User, 'isLoggedIn' | 'email'> = {
 };
 
 export const DUMMY_CONTACTS: Contact[] = [
-  { id: '1', name: 'John Doe', email: 'john.doe@example.com', number: '123-456-7890' },
-  { id: '2', name: 'Jane Smith', email: 'jane.smith@example.com', number: '234-567-8901' },
-  { id: '3', name: 'Sam Wilson', email: 'sam.wilson@example.com' },
+  { id: '1', name: 'John Doe', email: 'john.doe@example.com', number: '123-456-7890', description: 'Lead Developer on Project Phoenix.' },
+  { id: '2', name: 'Jane Smith', email: 'jane.smith@example.com', number: '234-567-8901', description: 'Marketing contact for the Q3 campaign.' },
+  { id: '3', name: 'Sam Wilson', email: 'sam.wilson@example.com', description: 'External consultant for UI/UX.' },
 ];
 
 export const DUMMY_MEETINGS: Meeting[] = [

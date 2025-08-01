@@ -5,6 +5,7 @@ export interface Contact {
   name: string;
   email: string;
   number?: string;
+  description?: string;
 }
 
 export const MeetingSchema = z.object({
@@ -53,6 +54,7 @@ export const ScheduleMeetingInputSchema = z.object({
       name: z.string(),
       email: z.string(),
       number: z.string().optional(),
+      description: z.string().optional(),
   })).describe('The user\'s contact list.'),
   userName: z.string(),
   userLocation: z.string(),

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useUser } from '@/components/providers/user-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit, Trash, User as UserIcon, Mail, Phone } from 'lucide-react';
+import { Plus, Edit, Trash, User as UserIcon, Mail, Phone, FileText } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,9 +11,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import type { Contact } from '@/lib/types';
+import { Textarea } from '../ui/textarea';
 
 const contactSchema = z.object({
     name: z.string().min(2, "Name is required"),
+    description: z.string().optional(),
     email: z.string().email("Invalid email address"),
     number: z.string().optional(),
 });
@@ -31,7 +33,7 @@ export default function ContactSettings() {
 
     const handleOpenForm = (contact: Contact | null = null) => {
         setEditingContact(contact);
-        form.reset(contact || { name: '', email: '', number: '' });
+        form.reset(contact || { name: '', description: '', email: '', number: '' });
         setFormOpen(true);
     };
 
@@ -56,17 +58,23 @@ export default function ContactSettings() {
             <div className="space-y-3">
                 {user.contacts.map((contact) => (
                     <Card key={contact.id}>
-                        <CardContent className="p-4 flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-muted rounded-full p-2">
+                        <CardContent className="p-4 flex justify-between items-start">
+                            <div className="flex items-start gap-4">
+                                <div className="bg-muted rounded-full p-2 mt-1">
                                     <UserIcon className="h-6 w-6 text-muted-foreground" />
                                 </div>
-                                <div>
+                                <div className="flex-grow">
                                     <p className="font-semibold">{contact.name}</p>
-                                    <div className="text-sm text-muted-foreground flex items-center gap-4">
+                                     <div className="text-sm text-muted-foreground flex items-center gap-4 mt-1">
                                        <span className="flex items-center gap-1"><Mail className="h-3 w-3"/>{contact.email}</span>
                                        {contact.number && <span className="flex items-center gap-1"><Phone className="h-3 w-3"/>{contact.number}</span>}
                                     </div>
+                                    {contact.description && (
+                                        <p className="text-xs text-muted-foreground mt-2 pt-2 border-t flex items-start gap-2">
+                                            <FileText className="h-3 w-4 mt-0.5 shrink-0"/> 
+                                            <span>{contact.description}</span>
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex gap-2">
@@ -106,6 +114,9 @@ export default function ContactSettings() {
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                              <FormField control={form.control} name="name" render={({ field }) => (
                                 <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                             <FormField control={form.control} name="description" render={({ field }) => (
+                                <FormItem><FormLabel>Description (Optional)</FormLabel><FormControl><Textarea placeholder="e.g. Project Manager for..." {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                              <FormField control={form.control} name="email" render={({ field }) => (
                                 <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
