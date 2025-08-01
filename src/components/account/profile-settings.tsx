@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Check, ChevronsUpDown, Upload } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2, MapPin, Upload } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { generateAvatar } from '@/ai/flows/generate-avatar';
 import { useState } from 'react';
@@ -48,6 +48,10 @@ const locations = [
     { value: "dubai, uae", label: "Dubai, UAE" },
     { value: "singapore", label: "Singapore" },
     { value: "toronto, canada", label: "Toronto, Canada" },
+    { value: "san francisco, usa", label: "San Francisco, USA" },
+    { value: "berlin, germany", label: "Berlin, Germany" },
+    { value: "hong kong", label: "Hong Kong" },
+    { value: "chicago, usa", label: "Chicago, USA" },
 ]
 
 export default function ProfileSettings() {
@@ -56,6 +60,7 @@ export default function ProfileSettings() {
   const [isAvatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const [avatarDescription, setAvatarDescription] = useState('');
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
 
   const form = useForm<z.infer<typeof profileFormSchema>>({
@@ -107,6 +112,43 @@ export default function ProfileSettings() {
     }
   }
 
+  const handleFetchCurrentLocation = () => {
+    if (!navigator.geolocation) {
+        toast({ title: "Geolocation not supported", description: "Your browser doesn't support geolocation.", variant: "destructive" });
+        return;
+    }
+
+    setIsFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const { latitude, longitude } = position.coords;
+            try {
+                const response = await fetch(`https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}`);
+                if (!response.ok) throw new Error("Failed to fetch location name.");
+                const data = await response.json();
+                if (data.length > 0) {
+                    const locationName = `${data[0].name}, ${data[0].country}`;
+                    form.setValue('location', locationName.toLowerCase());
+                    toast({ title: "Location updated!", description: `Your location has been set to ${locationName}.` });
+                } else {
+                    toast({ title: "Could not find location", description: "We couldn't determine your city from your coordinates.", variant: "destructive" });
+                }
+            } catch (error) {
+                console.error("Reverse geocoding error:", error);
+                toast({ title: "Error fetching location", description: "Could not get location name. Please try again.", variant: "destructive" });
+            } finally {
+                setIsFetchingLocation(false);
+            }
+        },
+        (error) => {
+            console.error("Geolocation error:", error);
+            toast({ title: "Geolocation failed", description: "Could not get your location. Please ensure you've given permission.", variant: "destructive" });
+            setIsFetchingLocation(false);
+        }
+    )
+
+  }
+
   return (
     <>
     <Form {...form}>
@@ -155,14 +197,12 @@ export default function ProfileSettings() {
                                 variant="outline"
                                 role="combobox"
                                 className={cn(
-                                "w-full justify-between",
+                                "w-full justify-between capitalize",
                                 !field.value && "text-muted-foreground"
                                 )}
                             >
                                 {field.value
-                                ? locations.find(
-                                    (location) => location.value === field.value
-                                )?.label
+                                ? field.value
                                 : "Select location"}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -198,6 +238,10 @@ export default function ProfileSettings() {
                             </Command>
                         </PopoverContent>
                         </Popover>
+                        <Button type="button" variant="link" size="sm" className="self-start px-1" onClick={handleFetchCurrentLocation} disabled={isFetchingLocation}>
+                            {isFetchingLocation ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MapPin className="mr-2 h-4 w-4"/>}
+                            {isFetchingLocation ? 'Fetching...' : 'Use my current location'}
+                        </Button>
                         <FormDescription>Used for weather reports and time zone adjustments.</FormDescription>
                         <FormMessage />
                     </FormItem>

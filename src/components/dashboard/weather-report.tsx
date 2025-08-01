@@ -35,7 +35,10 @@ export default function WeatherReport() {
         setLoading(true);
         try {
             const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${user.location}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`);
-            if (!response.ok) throw new Error('Failed to fetch weather');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to fetch weather');
+            }
             const data = await response.json();
             
             setWeather({
@@ -62,7 +65,7 @@ export default function WeatherReport() {
     <Card className={isMobile ? "border-0 shadow-none" : ""}>
       <CardHeader>
         <CardTitle>Current Weather</CardTitle>
-        <CardDescription>Live weather report for {user.location}.</CardDescription>
+        <CardDescription className="capitalize">Live weather report for {user.location}.</CardDescription>
       </CardHeader>
       <CardContent>
         {loading && <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}
