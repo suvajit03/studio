@@ -41,7 +41,7 @@ export function MainLayout() {
   return (
       <div className="h-screen w-full bg-background flex flex-col">
         <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-16 items-center justify-between gap-2 sm:gap-4">
+            <div className="container flex h-16 items-center justify-between gap-2 sm:gap-4 px-2 sm:px-8">
               <div className="flex items-center gap-2">
                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                     <SheetTrigger asChild>
