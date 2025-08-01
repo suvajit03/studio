@@ -116,7 +116,7 @@ export default function Chatbot() {
     setIsLoading(true);
 
     // Get the last 10 messages for context, removing IDs and actions
-    const historyForAI = newMessages.slice(-10).map(({ id, actions, isStreaming, ...releventData }) => releventData);
+    const historyForAI = newMessages.slice(-10).map(({ role, content }) => ({ role, content }));
 
     try {
         const result = await scheduleMeeting({
@@ -240,7 +240,7 @@ export default function Chatbot() {
 
                 {message.role === 'user' && (
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar} />
+                    {user.avatar && <AvatarImage src={user.avatar} />}
                     <AvatarFallback>
                       <User size={20} />
                     </AvatarFallback>
