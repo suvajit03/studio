@@ -44,6 +44,7 @@ export interface User {
   isLoggedIn: boolean;
   name: string;
   email: string;
+  password?: string;
   avatar: string;
   location: string;
   workTime: { start: string; end: string };

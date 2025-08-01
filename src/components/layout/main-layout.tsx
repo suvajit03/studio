@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bot, Menu } from 'lucide-react';
@@ -15,9 +15,12 @@ import {
 import MyCalendar from '../dashboard/my-calendar';
 import WeatherReport from '../dashboard/weather-report';
 import UpcomingMeetings from '../dashboard/upcoming-meetings';
+import { useUser } from '../providers/user-provider';
+import AccountSettingsDialog from '../account/account-settings-dialog';
 
 export function MainLayout() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const { showOnboarding, setShowOnboarding } = useUser();
 
   const SidePanelContent = () => (
      <Tabs defaultValue="meetings" className="w-full mt-4 flex flex-col h-full">
@@ -39,6 +42,7 @@ export function MainLayout() {
   )
 
   return (
+      <>
       <div className="h-screen w-full bg-background flex flex-col">
         <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center justify-between gap-2 sm:gap-4 px-2 sm:px-8">
@@ -75,5 +79,7 @@ export function MainLayout() {
             </main>
         </div>
       </div>
+      <AccountSettingsDialog open={showOnboarding} onOpenChange={setShowOnboarding} />
+    </>
   );
 }

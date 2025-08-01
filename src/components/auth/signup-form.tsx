@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useUser } from '@/components/providers/user-provider';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -23,7 +24,8 @@ const formSchema = z.object({
 });
 
 export default function SignupForm({ onSignup }: { onSignup: () => void }) {
-  const { login } = useUser();
+  const { signup } = useUser();
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -34,11 +36,20 @@ export default function SignupForm({ onSignup }: { onSignup: () => void }) {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // In a real app, you'd call an API here.
-    // For now, we log in the user with the new email.
-    login(values.email);
-    onSignup();
+    const success = signup(values.name, values.email, values.password);
+    if(success) {
+      toast({
+        title: 'Account Created!',
+        description: "Welcome to MeetAI. Let's get your profile set up.",
+      });
+      onSignup();
+    } else {
+      toast({
+        title: 'Signup Failed',
+        description: 'An account with this email already exists.',
+        variant: 'destructive',
+      });
+    }
   }
 
   return (

@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useUser } from '@/components/providers/user-provider';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -23,6 +24,7 @@ const formSchema = z.object({
 
 export default function LoginForm({ onLogin }: { onLogin: () => void }) {
   const { login } = useUser();
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -32,11 +34,20 @@ export default function LoginForm({ onLogin }: { onLogin: () => void }) {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // In a real app, you'd call an API here.
-    // For now, we just use the email for the dummy user.
-    login(values.email);
-    onLogin();
+    const success = login(values.email, values.password);
+    if (success) {
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome back!',
+      });
+      onLogin();
+    } else {
+      toast({
+        title: 'Login Failed',
+        description: 'Invalid email or password. Please try again.',
+        variant: 'destructive',
+      });
+    }
   }
 
   return (
