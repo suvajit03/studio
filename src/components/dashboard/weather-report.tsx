@@ -117,17 +117,18 @@ export default function WeatherReport() {
   return (
     <Card className={isMobile ? "border-0 shadow-none" : ""}>
       <CardHeader>
-        <div className="flex justify-between items-start">
-            <div>
+        <div className="flex justify-between items-start gap-2">
+            <div className="flex-1 min-w-0">
                  <CardTitle>Current Weather</CardTitle>
-                <CardDescription className="capitalize">
-                    {user.isLoggedIn && user.location ? `Live weather report for ${user.location}.` : 'Log in and set a location to see the weather.'}
+                <CardDescription className="capitalize truncate">
+                    {user.isLoggedIn && user.location ? `Live report for ${user.location}.` : 'Log in and set a location.'}
                 </CardDescription>
             </div>
             {user.isLoggedIn && user.location &&
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant="outline" size="sm" className="shrink-0">
                     <Link href="/forecast">
-                        5-Day Forecast
+                        <span className="hidden sm:inline">5-Day Forecast</span>
+                        <span className="sm:hidden">Forecast</span>
                         <ArrowRight className="ml-2 h-4 w-4"/>
                     </Link>
                 </Button>
