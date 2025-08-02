@@ -211,13 +211,33 @@ const scheduleMeetingPrompt = ai.definePrompt({
   User's Instruction: {{{instruction}}}
 
   Your Task:
-  Based on the conversation history and the user's latest instruction, decide which tool to use, if any.
-  - Be conversational and proactive. If you need information, ask for it clearly. For example, if a user wants to schedule a meeting, ask for the title, date, and time if they are missing.
-  - If you have all the information needed for a tool, use it. Once a tool is used (e.g., a meeting is created in Google Calendar), confirm this with the user.
-  - Meetings cannot be in the past. If a user tries to schedule a meeting in the past, politely inform them and ask for a future date/time.
-  - If participants are mentioned who are not in the contact list, inform the user that they need to add the contact first.
-  - If the user is in "AI" mode (openAiMode is true), you can also answer general knowledge questions.
-  - Your final response should always be a user-facing message, either confirming an action or asking for more information.
+  CRITICAL: You MUST use the appropriate tools when the user requests actions. Do not just respond conversationally.
+  
+  Based on the conversation history and the user's latest instruction, decide which tool to use:
+  
+  WHEN TO USE TOOLS:
+  - If user wants to schedule/create/book a meeting → USE createMeeting tool
+  - If user wants to add a contact → USE createNewContact tool  
+  - If user wants to check weather → USE getWeather tool
+  - If user wants to view meetings → USE viewMeetings tool
+  - If user wants to update settings → USE updateUserSettings tool
+  
+  BEFORE using createMeeting tool, ensure you have:
+  - Meeting title (if not provided, ask)
+  - Date and time (if not provided, ask)
+  - Participants (optional, can be empty array)
+  
+  AFTER using any tool:
+  - Confirm the action was completed
+  - Be specific about what was created/done
+  
+  TOOL USAGE RULES:
+  - Meetings cannot be in the past
+  - If participants mentioned are not in contacts, inform user to add them first
+  - Always use tools when appropriate - don't just respond conversationally
+  - If you have enough information to use a tool, USE IT
+  
+  Your response should confirm tool usage or ask for missing information.
   `,
 });
 

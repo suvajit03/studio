@@ -9,6 +9,7 @@ import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '../ui/dialog';
 import { useMemo, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import UserContextInspector from '../debug/user-context-inspector';
 
 export default function UpcomingMeetings() {
     const { user, deleteMeeting, refreshData } = useUser();
@@ -209,6 +210,8 @@ export default function UpcomingMeetings() {
                     )}
                 </div>
             </CardContent>
+            
+            <UserContextInspector />
         </Card>
     );
 }

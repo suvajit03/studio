@@ -131,6 +131,11 @@ export default function Chatbot() {
           openAiMode: true,
         });
         
+        console.log('🔧 AI response result:', result);
+        console.log('🔧 Tool requests in result:', result.toolRequests);
+        console.log('🔧 Number of tool requests:', result.toolRequests?.length || 0);
+        console.log('🔧 Result response:', result.response);
+        
         if (result.toolRequests && result.toolRequests.length > 0) {
             console.log('🔧 Tool requests received:', result.toolRequests);
             result.toolRequests.forEach(req => {
@@ -180,6 +185,10 @@ export default function Chatbot() {
                     toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
                 }
             });
+        } else {
+            console.log('❌ No tool requests found in AI response!');
+            console.log('❌ This means the AI responded conversationally without calling tools');
+            console.log('❌ AI response was:', result.response);
         }
 
       const assistantMessage: ChatMessage = {
